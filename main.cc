@@ -17,6 +17,10 @@ bool fileExists();
 
 const bool runningOnServer(fileExists());
 
+
+// Table Name as a constant to be used for testing so we don't need to change things again again
+const std::string tablename = "lineitem";
+
 // ****************************************************************** //
 // Code to check distinguish to pick files from CISE server or local machine.
 // It can be remove if needed depending on how the tests will be running.
@@ -45,7 +49,7 @@ void flushDataIntoFile();
 
 void readDataFromFile();
 
-int main() {
+int main1() {
     flushDataIntoFile();
     readDataFromFile();
     return 0;
@@ -53,7 +57,7 @@ int main() {
 
 void readDataFromFile() {
     Record temp;
-    Schema mySchema("catalog", "orders");
+    Schema mySchema("catalog", tablename.c_str());
     File file;
     file.Open(1, "/Users/madhavsodhani/projects/cpp/mock_data/testing");
 
@@ -74,15 +78,14 @@ void readDataFromFile() {
 
     file.Close();
     cout << "Total Number of records are  : " << total << '\n';
-
 }
 
 void flushDataIntoFile() {
-    char cstr[sizeOfFilePath("orders.tbl") + 1];
-    FILE *tableFile = fopen(getFilePath("orders.tbl", cstr), "r");
+    char cstr[sizeOfFilePath(tablename + ".tbl") + 1];
+    FILE *tableFile = fopen(getFilePath(tablename + ".tbl", cstr), "r");
 
     Record temp;
-    Schema mySchema("catalog", "orders");
+    Schema mySchema("catalog", tablename.c_str());
 
     int counter = 0;
     int whichPage = 0;
@@ -125,7 +128,7 @@ void flushDataIntoFile() {
 // ****************************************************************** //
 
 
-int main1() {
+int main() {
     // try to parse the CNF
     cout << "Enter in your CNF: ";
     if (yyparse() != 0) {
@@ -134,7 +137,7 @@ int main1() {
     }
 
     // suck up the schema from the file
-    Schema lineitem("catalog", "orders");
+    Schema lineitem("catalog", tablename.c_str());
 
     // grow the CNF expression from the parse tree
     CNF myComparison;
@@ -146,10 +149,10 @@ int main1() {
 
     // now open up the text file and start processing it
     char cstr[sizeOfFilePath("orders.tbl") + 1];
-    FILE *tableFile = fopen(getFilePath("orders.tbl", cstr), "r");
+    FILE *tableFile = fopen(getFilePath(tablename + ".tbl", cstr), "r");
 
     Record temp;
-    Schema mySchema("catalog", "orders");
+    Schema mySchema("catalog", tablename.c_str());
 
     //char *bits = literal.GetBits ();
     //cout << " numbytes in rec " << ((int *) bits)[0] << endl;

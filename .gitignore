@@ -1,0 +1,10 @@
+/.idea/
+/cmake-build-debug/
+
+/*.o
+/*.out
+/y.tab.c
+/y.tab.c-e
+/lex.yy.c
+/y.tab.h
+/main

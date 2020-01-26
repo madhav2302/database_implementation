@@ -25,3 +25,24 @@ add_executable(database_implementation main.cc
         )
 
 configure_file(catalog ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+
+add_executable(database_implementation_test test.cc
+        test.h
+        Comparison.cc
+        Comparison.h
+        ComparisonEngine.cc
+        ComparisonEngine.h
+        DBFile.cc
+        DBFile.h
+        Defs.h
+        File.cc
+        File.h
+        Record.cc
+        Record.h
+        Schema.cc
+        Schema.h
+        TwoWayList.cc
+        TwoWayList.h
+        lex.yy.c
+        y.tab.o
+        )

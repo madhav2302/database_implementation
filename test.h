@@ -1,8 +1,8 @@
 #ifndef TEST_H
 #define TEST_H
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include "DBFile.h"
 #include "Record.h"
@@ -79,7 +79,14 @@ void setup(const char *catalog_path, const char *dbfile_dir, const char *tpch_di
 }
 
 void cleanup() {
-    delete s, p, ps, n, li, r, o, c;
+    delete s;
+    delete p;
+    delete ps;
+    delete n;
+    delete li;
+    delete r;
+    delete o;
+    delete c;
 }
 
 #endif

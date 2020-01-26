@@ -73,11 +73,9 @@ void readDataFromFile() {
             total++;
             temp.Print(&mySchema);
         }
-//        cout << "Number of records in page : " << whichPage << ", are  : " << numberOfRecords << '\n';
     }
 
     file.Close();
-    cout << "Total Number of records are  : " << total << '\n';
 }
 
 void flushDataIntoFile() {
@@ -103,7 +101,6 @@ void flushDataIntoFile() {
         }
 
         if (page.Append(&temp) == 0) {
-//            cout << "Number of records in page : " << whichPage << ", are : " << numberOfRecordsInThePage << '\n';
             flushedAtEnd = true;
             file.AddPage(&page, whichPage++);
             page.EmptyItOut();
@@ -114,14 +111,13 @@ void flushDataIntoFile() {
     }
 
     if (!flushedAtEnd) {
-//        cout << "Number of records in page : " << whichPage << ", are : " << numberOfRecordsInThePage << '\n';
-        file.AddPage(&page, whichPage++);
+        file.AddPage(&page, file.GetLength());
         page.EmptyItOut();
     }
 
     file.Close();
 
-    cout << "Number of pages  : " << whichPage << '\n';
+    cout << "Number of pages  : " << file.GetLength() << '\n';
     cout << "Total number of records are  : " << counter << '\n';
 }
 

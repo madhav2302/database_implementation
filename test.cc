@@ -1,10 +1,20 @@
 #include <iostream>
 #include "DBFile.h"
 #include "test.h"
+#include <fstream>
+
+bool fileExists() {
+    std::string fileName = "/cise/homes/msodhani/server.ignore";
+    ifstream f(fileName.c_str());
+    return f.good();
+}
 
 // make sure that the file path/dir information below is correct
 const char *dbfile_dir = ""; // dir where binary heap files should be stored
-const char *tpch_dir = "/cise/tmp/dbi_sp11/DATA/10M/"; // dir where dbgen tpch files (extension *.tbl) can be found
+
+// dir where dbgen tpch files (extension *.tbl) can be found
+const char *tpch_dir = (fileExists() ? "/cise/homes/msodhani/mock_data/"
+                                   : "/Users/madhavsodhani/projects/cpp/mock_data/");
 const char *catalog_path = "catalog"; // full path of the catalog file
 
 using namespace std;

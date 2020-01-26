@@ -17,9 +17,9 @@ private:
 
     int curSizeInBytes;
 
-public:
     int numRecs;
 
+public:
     // constructor
     Page();
 
@@ -44,6 +44,8 @@ public:
     // empty it out
     void EmptyItOut();
 
+    // Returns the number of records in current Page
+    int NumRecs();
 };
 
 

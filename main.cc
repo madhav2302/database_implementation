@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <cstring>
+#include <gtest/gtest.h>
 
 using namespace std;
 
@@ -123,7 +124,6 @@ void flushDataIntoFile() {
 
 // ****************************************************************** //
 
-
 int main() {
     // try to parse the CNF
     cout << "Enter in your CNF: ";
@@ -145,7 +145,8 @@ int main() {
 
     // now open up the text file and start processing it
     char cstr[sizeOfFilePath("orders.tbl") + 1];
-    FILE *tableFile = fopen(getFilePath(tablename + ".tbl", cstr), "r");
+    //FILE *tableFile = fopen(getFilePath(tablename + ".tbl", cstr), "r");
+    FILE *tableFile = fopen ("/home/kaushik/Desktop/tpch/tpch-dbgen/lineitem.tbl", "r");
 
     Record temp;
     Schema mySchema("catalog", tablename.c_str());

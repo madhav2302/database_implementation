@@ -13,6 +13,7 @@ bool fileExists() {
 const char *dbfile_dir = ""; // dir where binary heap files should be stored
 
 // dir where dbgen tpch files (extension *.tbl) can be found
+//"/home/kaushik/Desktop/tpch_ten_GB/tpch-dbgen/";
 const char *tpch_dir = (fileExists() ? "/cise/homes/msodhani/mock_data/"
                                    : "/Users/madhavsodhani/projects/cpp/mock_data/");
 const char *catalog_path = "catalog"; // full path of the catalog file

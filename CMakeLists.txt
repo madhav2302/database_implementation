@@ -21,7 +21,6 @@ add_executable(database_implementation main.cc
         TwoWayList.cc
         TwoWayList.h
         lex.yy.c
-        y.tab.o
         )
 
 configure_file(catalog ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
@@ -44,7 +43,6 @@ add_executable(database_implementation_test test.cc
         TwoWayList.cc
         TwoWayList.h
         lex.yy.c
-        y.tab.o
         )
 
 

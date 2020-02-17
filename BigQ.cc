@@ -1,27 +1,12 @@
 #include <vector>
-#include <sstream>
-#include "BigQ.h"
-#include "File.h"
 #include <cmath>
 #include <queue>
 #include <algorithm>
 #include <cstring>
+#include "BigQ.h"
+#include "File.h"
 
 ComparisonEngine comp;
-const std::string tablename = "lineitem";
-
-static std::string randomFileName() {
-    time_t result = time(nullptr);
-    std::stringstream ss;
-    ss << result;
-    return "tmp" + ss.str() + ".bin";
-}
-
-struct CustomCompare {
-    bool operator()(RecordWrapper *lhs, RecordWrapper *rhs) {
-        return comp.Compare(lhs->firstOne, rhs->firstOne, lhs->sortorder) == 1;
-    }
-};
 
 BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
     std::string fileName(randomFileName());
@@ -30,35 +15,29 @@ BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
     file->Open(0, cstr);
     page = new Page();
 
-    Record temp;
+    auto *temp = new Record();
     vector<Page *> pages;
 
-    int totalRuns = 0;
-    while (in.Remove(&temp)) {
-        if (pages.size() == runlen) {
-            SortRun(pages, in, out, &sortorder, runlen);
-            totalRuns += 1;
-        }
+    while (in.Remove(temp)) {
+        if (pages.size() == runlen) SortRun(pages, out, &sortorder, runlen);
 
-        if (!page->Append(&temp)) {
+        if (!page->Append(temp)) {
             pages.push_back(page);
             page = new Page();
-            page->Append(&temp);
+            page->Append(temp);
         }
+
+        temp = new Record();
     }
 
     // Push final page
     pages.push_back(page);
 
     // Sorting remaining records as run
-    SortRun(pages, in, out, &sortorder, runlen);
-    totalRuns += 1;
-
-//    cout << "Total runs are  " << totalRuns << '\n';
+    while (!pages.empty()) SortRun(pages, out, &sortorder, runlen);
 
     int numberOfRuns = std::ceil((file->GetLength() - 1) / (double) runlen);
 
-//    cout << "Number of runs are  " << numberOfRuns << '\n';
     Run *runs[numberOfRuns];
 
     for (int i = 0; i < numberOfRuns; i++) {
@@ -68,7 +47,7 @@ BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
     std::priority_queue<RecordWrapper *, vector<RecordWrapper *>, CustomCompare> pqueue;
 
     for (int i = 0; i < numberOfRuns; i++) {
-        RecordWrapper *recordWrapperTemp = new RecordWrapper(&sortorder, i);
+        auto *recordWrapperTemp = new RecordWrapper(&sortorder, &comp, i);
         if (runs[i]->GetFirst(recordWrapperTemp) == 1) {
             pqueue.push(recordWrapperTemp);
         }
@@ -77,13 +56,12 @@ BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
     while (!pqueue.empty()) {
         RecordWrapper *r = pqueue.top();
         out.Insert(r->firstOne);
+        pqueue.pop();
 
-        RecordWrapper *recordWrapperTemp = new RecordWrapper(&sortorder, r->runArrayIndex);
+        auto *recordWrapperTemp = new RecordWrapper(&sortorder, &comp, r->runArrayIndex);
         if (runs[r->runArrayIndex]->GetFirst(recordWrapperTemp) == 1) {
             pqueue.push(recordWrapperTemp);
         }
-
-        pqueue.pop();
     }
 
     file->Close();
@@ -91,47 +69,48 @@ BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
     out.ShutDown();
 }
 
-void BigQ::SortRun(vector<Page *> &pages, Pipe &in, Pipe &out, OrderMaker *sortorder, int runlen) {
-    Record temp;
+void BigQ::SortRun(vector<Page *> &pages, Pipe &out, OrderMaker *sortorder, int runlen) {
+    auto *temp = new Record();
+
     vector<Record *> records;
     for (Page *p : pages) {
-        while (p->GetFirst(&temp)) {
-            Record *rec = new Record();
-            rec->Consume(&temp);
-            records.push_back(rec);
+        while (p->GetFirst(temp)) {
+            records.push_back(temp);
+            temp = new Record();
         }
     }
 
     pages.clear();
 
     sort(records.begin(), records.end(),
-         [sortorder](Record *r1, Record *r2) { return comp.Compare(r1, r2, sortorder) == 1; });
+         [sortorder](Record *r1, Record *r2) { return comp.Compare(r1, r2, sortorder) != 1; });
 
     int currentCount = runlen;
 
-    Page page;
     for (Record *r : records) {
-        if (currentCount == 0) {
-            in.Insert(r);
-        } else if (!page.Append(r)) {
-            file->AddPage(&page, writePage++);
-            page.EmptyItOut();
-            currentCount--;
-
+        if (!page->Append(r)) {
             if (currentCount == 0) {
-                in.Insert(r);
+                pages.push_back(page);
             } else {
-                page.Append(r);
+                file->AddPage(page, writePage++);
+                currentCount--;
             }
+            page = new Page();
+            page->Append(r);
         }
     }
 
-    file->AddPage(&page, writePage++);
-    page.EmptyItOut();
+    if (currentCount == 0) {
+        pages.push_back(page);
+    } else {
+        file->AddPage(page, writePage++);
+    }
+    page = new Page();
 }
 
 BigQ::~BigQ() {
-//    delete file;
+    delete file;
+    delete page;
 }
 
 
@@ -142,7 +121,6 @@ Run::Run(File *file, int startPage, int endPage) {
 }
 
 Run::~Run() {
-    delete file;
     delete page;
 }
 

@@ -9,11 +9,8 @@
 #include "ComparisonEngine.h"
 
 class Record;
-
 class Comparison;
-
 class OrderMaker;
-
 class CNF;
 
 class ComparisonEngine {
@@ -21,7 +18,6 @@ class ComparisonEngine {
 private:
 
     int Run(Record *left, Record *literal, Comparison *c);
-
     int Run(Record *left, Record *right, Record *literal, Comparison *c);
 
 public:

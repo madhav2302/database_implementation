@@ -44,10 +44,10 @@ BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
         runs[i] = new Run(file, runlen * i, std::min((off_t) (runlen * (i + 1)) - 1, file->GetLength() - 2));
     }
 
-    std::priority_queue<RecordWrapper *, vector<RecordWrapper *>, CustomCompare> pqueue;
+    std::priority_queue<RecordWrapper *, vector<RecordWrapper *>, CustomRecordCompare> pqueue(&sortorder);
 
     for (int i = 0; i < numberOfRuns; i++) {
-        auto *recordWrapperTemp = new RecordWrapper(&sortorder, &comp, i);
+        auto *recordWrapperTemp = new RecordWrapper(i);
         if (runs[i]->GetFirst(recordWrapperTemp) == 1) {
             pqueue.push(recordWrapperTemp);
         }
@@ -58,7 +58,7 @@ BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
         out.Insert(r->firstOne);
         pqueue.pop();
 
-        auto *recordWrapperTemp = new RecordWrapper(&sortorder, &comp, r->runArrayIndex);
+        auto *recordWrapperTemp = new RecordWrapper(r->runArrayIndex);
         if (runs[r->runArrayIndex]->GetFirst(recordWrapperTemp) == 1) {
             pqueue.push(recordWrapperTemp);
         }
@@ -72,22 +72,22 @@ BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 void BigQ::SortRun(vector<Page *> &pages, Pipe &out, OrderMaker *sortorder, int runlen) {
     auto *temp = new Record();
 
-    vector<Record *> records;
+    std::priority_queue<Record *, vector<Record *>, CustomRecordCompare> pqueue(sortorder);
+
     for (Page *p : pages) {
         while (p->GetFirst(temp)) {
-            records.push_back(temp);
+            pqueue.push(temp);
             temp = new Record();
         }
     }
 
     pages.clear();
 
-    sort(records.begin(), records.end(),
-         [sortorder](Record *r1, Record *r2) { return comp.Compare(r1, r2, sortorder) != 1; });
-
     int currentCount = runlen;
 
-    for (Record *r : records) {
+    while (pqueue.size() > 0) {
+        Record *r = pqueue.top();
+        pqueue.pop();
         if (!page->Append(r)) {
             if (currentCount == 0) {
                 pages.push_back(page);

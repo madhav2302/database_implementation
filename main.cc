@@ -19,10 +19,6 @@ bool fileExists();
 
 const bool runningOnServer(fileExists());
 
-
-// Table Name as a constant to be used for testing so we don't need to change things again again
-const std::string tablename = "nation";
-
 // ****************************************************************** //
 // Code to check distinguish to pick files from CISE server or local machine.
 // It can be remove if needed depending on how the tests will be running.
@@ -59,7 +55,7 @@ int main() {
 
 void readDataFromFile() {
     Record temp;
-    Schema mySchema("catalog", tablename.c_str());
+    Schema mySchema("catalog", "nation");
     File file;
     file.Open(1, "tmp1581932790.bin");
 
@@ -81,11 +77,11 @@ void readDataFromFile() {
 }
 
 void flushDataIntoFile() {
-    char cstr[sizeOfFilePath(tablename + ".tbl") + 1];
-    FILE *tableFile = fopen(getFilePath(tablename + ".tbl", cstr), "r");
+    char cstr[sizeOfFilePath("nation.tbl") + 1];
+    FILE *tableFile = fopen(getFilePath("nation.tbl", cstr), "r");
 
     Record temp;
-    Schema mySchema("catalog", tablename.c_str());
+    Schema mySchema("catalog", "nation");
 
     int counter = 0;
     int whichPage = 0;
@@ -134,7 +130,7 @@ int main2() {
     }
 
     // suck up the schema from the file
-    Schema lineitem("catalog", tablename.c_str());
+    Schema lineitem("catalog", "nation");
 
     // grow the CNF expression from the parse tree
     CNF myComparison;
@@ -150,7 +146,7 @@ int main2() {
     FILE *tableFile = fopen("/home/kaushik/Desktop/tpch/tpch-dbgen/lineitem.tbl", "r");
 
     Record temp;
-    Schema mySchema("catalog", tablename.c_str());
+    Schema mySchema("catalog", "nation");
 
     //char *bits = literal.GetBits ();
     //cout << " numbytes in rec " << ((int *) bits)[0] << endl;

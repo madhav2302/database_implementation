@@ -46,20 +46,27 @@ public:
 class RecordWrapper {
 public:
     Record *firstOne = new Record();
-    OrderMaker *sortorder;
-    ComparisonEngine *comp;
     int runArrayIndex;
 
-    RecordWrapper(OrderMaker *sortorder, ComparisonEngine *comp, int runArrayIndex) {
-        this->sortorder = sortorder;
-        this->comp = comp;
+    RecordWrapper(int runArrayIndex) {
         this->runArrayIndex = runArrayIndex;
     }
 };
 
-struct CustomCompare {
+struct CustomRecordCompare {
+    OrderMaker* orderMaker;
+    ComparisonEngine comp;
+
+    CustomRecordCompare(OrderMaker* orderMaker) {
+        this->orderMaker = orderMaker;
+    }
+
+    bool operator()(Record *lhs, Record *rhs) {
+        return comp.Compare(lhs, rhs, this->orderMaker) > 0;
+    }
+
     bool operator()(RecordWrapper *lhs, RecordWrapper *rhs) {
-        return lhs->comp->Compare(lhs->firstOne, rhs->firstOne, lhs->sortorder) != 1;
+        return comp.Compare(lhs->firstOne, rhs->firstOne, this->orderMaker) > 0;
     }
 };
 

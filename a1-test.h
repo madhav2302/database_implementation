@@ -6,6 +6,7 @@
 #include <iostream>
 #include "DBFile.h"
 #include "Record.h"
+#include "Schema.h"
 
 using namespace std;
 

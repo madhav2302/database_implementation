@@ -3,6 +3,8 @@
 
 /*.o
 /*.out
+/*.bin
+/*.bin.*
 /y.tab.c
 /y.tab.c-e
 /lex.yy.c

@@ -1,6 +1,7 @@
 #ifndef FILE_H
 #define FILE_H
 
+#include <string>
 #include "TwoWayList.h"
 #include "Record.h"
 #include "Schema.h"
@@ -43,9 +44,6 @@ public:
 
     // empty it out
     void EmptyItOut();
-
-    // Returns the number of records in current Page
-    int NumRecs();
 };
 
 

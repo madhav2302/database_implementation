@@ -6,7 +6,6 @@
 #include <iostream>
 #include "DBFile.h"
 #include "Record.h"
-#include "Pipe.h"
 
 using namespace std;
 
@@ -15,13 +14,6 @@ int yyparse(void);   // defined in y.tab.c
 }
 
 extern struct AndList *final;
-
-typedef struct {
-    Pipe *pipe;
-    OrderMaker *order;
-    bool print;
-    bool write;
-} testutil;
 
 class relation {
 
@@ -56,24 +48,7 @@ public:
         }
         cnf_pred.GrowFromParseTree(final, schema(), literal); // constructs CNF predicate
     }
-
-    void get_sort_order(OrderMaker &sortorder) {
-        cout << "\n specify sort ordering (when done press ctrl-D):\n\t ";
-        if (yyparse() != 0) {
-            cout << "Can't parse your sort CNF.\n";
-            exit(1);
-        }
-        cout << " \n";
-        Record literal;
-        CNF sort_pred;
-        sort_pred.GrowFromParseTree(final, schema(), literal); // constructs CNF predicate
-        OrderMaker dummy;
-        sort_pred.GetSortOrders(sortorder, dummy);
-    }
 };
-
-
-relation *rel;
 
 const char *supplier = "supplier";
 const char *partsupp = "partsupp";
@@ -86,12 +61,7 @@ const char *lineitem = "lineitem";
 
 relation *s, *p, *ps, *n, *li, *r, *o, *c;
 
-const char *tpch_dir = "/Users/madhavsodhani/projects/cpp/mock_data/";
-//const char *tpch_dir = "/home/kaushik/Documents/tpch/tpch-dbgen/";
-const char *catalog_path = "catalog"; // full path of the catalog file
-const char *dbfile_dir = ""; // full path of the catalog file
-
-void setup() {
+void setup(const char *catalog_path, const char *dbfile_dir, const char *tpch_dir) {
     cout << " \n** IMPORTANT: MAKE SURE THE INFORMATION BELOW IS CORRECT **\n";
     cout << " catalog location: \t" << catalog_path << endl;
     cout << " tpch files dir: \t" << tpch_dir << endl;

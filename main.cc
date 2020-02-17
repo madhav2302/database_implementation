@@ -4,7 +4,8 @@
 #include <cstdlib>
 #include <fstream>
 #include <cstring>
-#include <gtest/gtest.h>
+#include <vector>
+//#include <gtest/gtest.h>
 
 using namespace std;
 
@@ -20,7 +21,7 @@ const bool runningOnServer(fileExists());
 
 
 // Table Name as a constant to be used for testing so we don't need to change things again again
-const std::string tablename = "lineitem";
+const std::string tablename = "nation";
 
 // ****************************************************************** //
 // Code to check distinguish to pick files from CISE server or local machine.
@@ -50,8 +51,8 @@ void flushDataIntoFile();
 
 void readDataFromFile();
 
-int main1() {
-    flushDataIntoFile();
+int main() {
+//    flushDataIntoFile();
     readDataFromFile();
     return 0;
 }
@@ -60,7 +61,7 @@ void readDataFromFile() {
     Record temp;
     Schema mySchema("catalog", tablename.c_str());
     File file;
-    file.Open(1, "/Users/madhavsodhani/projects/cpp/mock_data/testing");
+    file.Open(1, "tmp1581932790.bin");
 
     cout << "File length is : " << file.GetLength() << '\n';
     Page page;
@@ -124,7 +125,7 @@ void flushDataIntoFile() {
 
 // ****************************************************************** //
 
-int main() {
+int main2() {
     // try to parse the CNF
     cout << "Enter in your CNF: ";
     if (yyparse() != 0) {
@@ -146,7 +147,7 @@ int main() {
     // now open up the text file and start processing it
     char cstr[sizeOfFilePath("orders.tbl") + 1];
     //FILE *tableFile = fopen(getFilePath(tablename + ".tbl", cstr), "r");
-    FILE *tableFile = fopen ("/home/kaushik/Desktop/tpch/tpch-dbgen/lineitem.tbl", "r");
+    FILE *tableFile = fopen("/home/kaushik/Desktop/tpch/tpch-dbgen/lineitem.tbl", "r");
 
     Record temp;
     Schema mySchema("catalog", tablename.c_str());

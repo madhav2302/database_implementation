@@ -102,10 +102,10 @@ int SortSingleRunData(File *file, vector<Page *> &pages, OrderMaker *sortorder, 
 void Phase2(File *file, Pipe &out, OrderMaker &sortorder, int runlen) {
     int numberOfRuns = std::ceil((file->GetLength() - 1) / (double) runlen);
 
-    Run *runs[numberOfRuns];
+    SingleRun *runs[numberOfRuns];
 
     for (int i = 0; i < numberOfRuns; i++) {
-        runs[i] = new Run(file, runlen * i, std::min((off_t) (runlen * (i + 1)) - 1, file->GetLength() - 2));
+        runs[i] = new SingleRun(file, runlen * i, std::min((off_t) (runlen * (i + 1)) - 1, file->GetLength() - 2));
     }
 
     std::priority_queue<RecordWrapper *, vector<RecordWrapper *>, CustomRecordCompare> pqueue(&sortorder);
@@ -142,17 +142,17 @@ void Finish(File *file, std::string fileName, Pipe &out) {
 BigQ::~BigQ() = default;
 
 
-Run::Run(File *file, int startPage, int endPage) {
+SingleRun::SingleRun(File *file, int startPage, int endPage) {
     this->file = file;
     this->startPage = startPage;
     this->endPage = endPage;
 }
 
-Run::~Run() {
+SingleRun::~SingleRun() {
     delete page;
 }
 
-int Run::GetFirst(RecordWrapper *wrapper) {
+int SingleRun::GetFirst(RecordWrapper *wrapper) {
     if (page->GetFirst(wrapper->firstOne) != 1) {
         if (startPage > endPage) return 0;
 

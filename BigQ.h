@@ -41,7 +41,7 @@ int SortSingleRunData(File *file, vector<Page *> &pages, OrderMaker *sortorder, 
 
 class RecordWrapper;
 
-class Run {
+class SingleRun {
 private:
     int startPage;
     int endPage;
@@ -49,9 +49,9 @@ private:
     Page *page = new Page();
     File *file;
 public:
-    Run(File *file, int startPage, int endPage);
+    SingleRun(File *file, int startPage, int endPage);
 
-    ~Run();
+    ~SingleRun();
 
     int GetFirst(RecordWrapper *firstOne);
 };

@@ -13,6 +13,9 @@ endif
 myGtest.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o y.tab.o lex.yy.o myGtest.o
 	$(CC) -o myGtest.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o y.tab.o lex.yy.o myGtest.o $(test_out_tag) -lpthread -lgtest
 
+BigQTests.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o y.tab.o lex.yy.o BigQTests.o
+	$(CC) -o BigQTests.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o y.tab.o lex.yy.o BigQTests.o $(test_out_tag) -lpthread -lgtest
+
 test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o y.tab.o lex.yy.o test.o
 	$(CC) -o test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o y.tab.o lex.yy.o test.o $(test_out_tag) -lpthread
 
@@ -24,6 +27,9 @@ main: Record.o Comparison.o ComparisonEngine.o Schema.o File.o y.tab.o lex.yy.o 
 
 myGtest.o: myGtest.cc
 	$(CC) -g -c myGtest.cc
+
+BigQTests.o: BigQTests.cc
+	$(CC) -g -c BigQTests.cc
 
 test.o: test.cc
 	$(CC) -g -c test.cc

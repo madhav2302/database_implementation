@@ -49,6 +49,10 @@ public:
 	// there is no more data that is going to be added into the pipe
 	void ShutDown ();
 
+	bool isDone() {
+	    return done == 1;
+	}
+
 };
 
 #endif

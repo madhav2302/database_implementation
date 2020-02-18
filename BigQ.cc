@@ -6,20 +6,33 @@
 #include "BigQ.h"
 #include "File.h"
 
-ComparisonEngine comp;
-
 BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
+    TPMMS(in, out, sortorder, runlen);
+}
+
+void BigQ::TPMMS(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
+    std::string fileName = Init();
+    Phase1(in, sortorder, runlen);
+    Phase2(out, sortorder, runlen);
+    Finish(fileName, out);
+}
+
+std::string BigQ::Init() {
     std::string fileName(randomFileName());
     char cstr[fileName.size() + 1];
     strcpy(cstr, fileName.c_str());
     file->Open(0, cstr);
-    page = new Page();
+    return fileName;
+}
+
+void BigQ::Phase1(Pipe &in, OrderMaker &sortorder, int runlen) {
+    Page *page = new Page();
 
     auto *temp = new Record();
     vector<Page *> pages;
 
     while (in.Remove(temp)) {
-        if (pages.size() == runlen) SortRun(pages, out, &sortorder, runlen);
+        if (pages.size() == runlen) SortRun(pages, &sortorder, runlen);
 
         if (!page->Append(temp)) {
             pages.push_back(page);
@@ -34,8 +47,10 @@ BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
     pages.push_back(page);
 
     // Sorting remaining records as run
-    while (!pages.empty()) SortRun(pages, out, &sortorder, runlen);
+    while (!pages.empty()) SortRun(pages, &sortorder, runlen);
+}
 
+void BigQ::Phase2(Pipe &out, OrderMaker &sortorder, int runlen) {
     int numberOfRuns = std::ceil((file->GetLength() - 1) / (double) runlen);
 
     Run *runs[numberOfRuns];
@@ -63,13 +78,19 @@ BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
             pqueue.push(recordWrapperTemp);
         }
     }
+}
+
+
+void BigQ::Finish(std::string fileName, Pipe &out) {
+    char cstr[fileName.size() + 1];
+    strcpy(cstr, fileName.c_str());
 
     file->Close();
     remove(cstr);
     out.ShutDown();
 }
 
-void BigQ::SortRun(vector<Page *> &pages, Pipe &out, OrderMaker *sortorder, int runlen) {
+void BigQ::SortRun(vector<Page *> &pages, OrderMaker *sortorder, int runlen) {
     auto *temp = new Record();
 
     std::priority_queue<Record *, vector<Record *>, CustomRecordCompare> pqueue(sortorder);
@@ -110,7 +131,6 @@ void BigQ::SortRun(vector<Page *> &pages, Pipe &out, OrderMaker *sortorder, int 
 
 BigQ::~BigQ() {
     delete file;
-    delete page;
 }
 
 

@@ -15,10 +15,15 @@ class BigQ {
 
 private:
     File *file = new File();
-    Page *page;
     off_t writePage{};
 
-    void SortRun(vector<Page *> &pages, Pipe &out, OrderMaker *sortorder, int runlen);
+    void TPMMS(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen);
+    std::string Init();
+    void Phase1(Pipe &in, OrderMaker &sortorder, int runlen);
+    void Phase2(Pipe &out, OrderMaker &sortorder, int runlen);
+    void Finish(std::string fileName, Pipe &out);
+
+    void SortRun(vector<Page *> &pages, OrderMaker *sortorder, int runlen);
 
 public:
     BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen);

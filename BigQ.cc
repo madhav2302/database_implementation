@@ -7,17 +7,25 @@
 #include "File.h"
 
 BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
-    TPMMS(in, out, sortorder, runlen);
+    thread_data data = {.in =  in, .out =  out, .sortorder = sortorder, .runlen = runlen};
+
+    pthread_t worker_t;
+    pthread_create(&worker_t, NULL, TPMMS, (void *) &data);
+    pthread_join(worker_t, NULL);
 }
 
-void BigQ::TPMMS(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
-    std::string fileName = Init();
-    Phase1(in, sortorder, runlen);
-    Phase2(out, sortorder, runlen);
-    Finish(fileName, out);
+void *TPMMS(void *data) {
+    auto *threadData = (thread_data *) data;
+
+    File *file = new File();
+    std::string fileName = Init(file);
+    Phase1(file, threadData->in, threadData->sortorder, threadData->runlen);
+    Phase2(file, threadData->out, threadData->sortorder, threadData->runlen);
+    Finish(file, fileName, threadData->out);
+    return nullptr;
 }
 
-std::string BigQ::Init() {
+std::string Init(File *file) {
     std::string fileName(randomFileName());
     char cstr[fileName.size() + 1];
     strcpy(cstr, fileName.c_str());
@@ -25,14 +33,15 @@ std::string BigQ::Init() {
     return fileName;
 }
 
-void BigQ::Phase1(Pipe &in, OrderMaker &sortorder, int runlen) {
+void Phase1(File *file, Pipe &in, OrderMaker &sortorder, int runlen) {
     Page *page = new Page();
+    int writePage = 0;
 
     auto *temp = new Record();
     vector<Page *> pages;
 
     while (in.Remove(temp)) {
-        if (pages.size() == runlen) SortRun(pages, &sortorder, runlen);
+        if (pages.size() == runlen) writePage = SortSingleRunData(file, pages, &sortorder, runlen, writePage);
 
         if (!page->Append(temp)) {
             pages.push_back(page);
@@ -47,50 +56,10 @@ void BigQ::Phase1(Pipe &in, OrderMaker &sortorder, int runlen) {
     pages.push_back(page);
 
     // Sorting remaining records as run
-    while (!pages.empty()) SortRun(pages, &sortorder, runlen);
+    while (!pages.empty()) writePage = SortSingleRunData(file, pages, &sortorder, runlen, writePage);
 }
 
-void BigQ::Phase2(Pipe &out, OrderMaker &sortorder, int runlen) {
-    int numberOfRuns = std::ceil((file->GetLength() - 1) / (double) runlen);
-
-    Run *runs[numberOfRuns];
-
-    for (int i = 0; i < numberOfRuns; i++) {
-        runs[i] = new Run(file, runlen * i, std::min((off_t) (runlen * (i + 1)) - 1, file->GetLength() - 2));
-    }
-
-    std::priority_queue<RecordWrapper *, vector<RecordWrapper *>, CustomRecordCompare> pqueue(&sortorder);
-
-    for (int i = 0; i < numberOfRuns; i++) {
-        auto *recordWrapperTemp = new RecordWrapper(i);
-        if (runs[i]->GetFirst(recordWrapperTemp) == 1) {
-            pqueue.push(recordWrapperTemp);
-        }
-    }
-
-    while (!pqueue.empty()) {
-        RecordWrapper *r = pqueue.top();
-        out.Insert(r->firstOne);
-        pqueue.pop();
-
-        auto *recordWrapperTemp = new RecordWrapper(r->runArrayIndex);
-        if (runs[r->runArrayIndex]->GetFirst(recordWrapperTemp) == 1) {
-            pqueue.push(recordWrapperTemp);
-        }
-    }
-}
-
-
-void BigQ::Finish(std::string fileName, Pipe &out) {
-    char cstr[fileName.size() + 1];
-    strcpy(cstr, fileName.c_str());
-
-    file->Close();
-    remove(cstr);
-    out.ShutDown();
-}
-
-void BigQ::SortRun(vector<Page *> &pages, OrderMaker *sortorder, int runlen) {
+int SortSingleRunData(File *file, vector<Page *> &pages, OrderMaker *sortorder, int runlen, int writePage) {
     auto *temp = new Record();
 
     std::priority_queue<Record *, vector<Record *>, CustomRecordCompare> pqueue(sortorder);
@@ -127,11 +96,50 @@ void BigQ::SortRun(vector<Page *> &pages, OrderMaker *sortorder, int runlen) {
     } else {
         file->AddPage(bufferPage, writePage++);
     }
+    return writePage;
 }
 
-BigQ::~BigQ() {
-    delete file;
+void Phase2(File *file, Pipe &out, OrderMaker &sortorder, int runlen) {
+    int numberOfRuns = std::ceil((file->GetLength() - 1) / (double) runlen);
+
+    Run *runs[numberOfRuns];
+
+    for (int i = 0; i < numberOfRuns; i++) {
+        runs[i] = new Run(file, runlen * i, std::min((off_t) (runlen * (i + 1)) - 1, file->GetLength() - 2));
+    }
+
+    std::priority_queue<RecordWrapper *, vector<RecordWrapper *>, CustomRecordCompare> pqueue(&sortorder);
+
+    for (int i = 0; i < numberOfRuns; i++) {
+        auto *recordWrapperTemp = new RecordWrapper(i);
+        if (runs[i]->GetFirst(recordWrapperTemp) == 1) {
+            pqueue.push(recordWrapperTemp);
+        }
+    }
+
+    while (!pqueue.empty()) {
+        RecordWrapper *r = pqueue.top();
+        out.Insert(r->firstOne);
+        pqueue.pop();
+
+        auto *recordWrapperTemp = new RecordWrapper(r->runArrayIndex);
+        if (runs[r->runArrayIndex]->GetFirst(recordWrapperTemp) == 1) {
+            pqueue.push(recordWrapperTemp);
+        }
+    }
 }
+
+
+void Finish(File *file, std::string fileName, Pipe &out) {
+    char cstr[fileName.size() + 1];
+    strcpy(cstr, fileName.c_str());
+
+    file->Close();
+    remove(cstr);
+    out.ShutDown();
+}
+
+BigQ::~BigQ() = default;
 
 
 Run::Run(File *file, int startPage, int endPage) {

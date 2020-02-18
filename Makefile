@@ -1,6 +1,6 @@
 GTEST_CFLAGS = `pkg-config --cflags Google_tests`
 GTEST_LIBS = `pkg-config --libs Google_tests`
-CC = g++ -O2 -std=c++11 -Wno-deprecated
+CC = g++ -O2 -Wno-deprecated
 
 tag = -i
 test_out_tag = -ll

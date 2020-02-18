@@ -14,22 +14,30 @@ using namespace std;
 class BigQ {
 
 private:
-    File *file = new File();
-    off_t writePage{};
-
-    void TPMMS(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen);
-    std::string Init();
-    void Phase1(Pipe &in, OrderMaker &sortorder, int runlen);
-    void Phase2(Pipe &out, OrderMaker &sortorder, int runlen);
-    void Finish(std::string fileName, Pipe &out);
-
-    void SortRun(vector<Page *> &pages, OrderMaker *sortorder, int runlen);
-
 public:
     BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen);
 
     ~BigQ();
 };
+
+struct thread_data {
+    Pipe &in;
+    Pipe &out;
+    OrderMaker &sortorder;
+    int runlen;
+};
+
+void *TPMMS(void *data);
+
+std::string Init(File *file);
+
+void Phase1(File *file, Pipe &in, OrderMaker &sortorder, int runlen);
+
+void Phase2(File *file, Pipe &out, OrderMaker &sortorder, int runlen);
+
+void Finish(File *file, std::string fileName, Pipe &out);
+
+int SortSingleRunData(File *file, vector<Page *> &pages, OrderMaker *sortorder, int runlen, int writePage);
 
 class RecordWrapper;
 
@@ -59,10 +67,10 @@ public:
 };
 
 struct CustomRecordCompare {
-    OrderMaker* orderMaker;
+    OrderMaker *orderMaker;
     ComparisonEngine comp;
 
-    CustomRecordCompare(OrderMaker* orderMaker) {
+    CustomRecordCompare(OrderMaker *orderMaker) {
         this->orderMaker = orderMaker;
     }
 

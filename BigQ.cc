@@ -85,27 +85,27 @@ void BigQ::SortRun(vector<Page *> &pages, Pipe &out, OrderMaker *sortorder, int 
 
     int currentCount = runlen;
 
-    while (pqueue.size() > 0) {
+    Page *bufferPage = new Page();
+    while (!pqueue.empty()) {
         Record *r = pqueue.top();
         pqueue.pop();
-        if (!page->Append(r)) {
+        if (!bufferPage->Append(r)) {
             if (currentCount == 0) {
-                pages.push_back(page);
+                pages.push_back(bufferPage);
             } else {
-                file->AddPage(page, writePage++);
+                file->AddPage(bufferPage, writePage++);
                 currentCount--;
             }
-            page = new Page();
-            page->Append(r);
+            bufferPage = new Page();
+            bufferPage->Append(r);
         }
     }
 
     if (currentCount == 0) {
-        pages.push_back(page);
+        pages.push_back(bufferPage);
     } else {
-        file->AddPage(page, writePage++);
+        file->AddPage(bufferPage, writePage++);
     }
-    page = new Page();
 }
 
 BigQ::~BigQ() {

@@ -18,6 +18,7 @@ bool fileExists(std::string fileName) {
 }
 
 
+// Checks successful generation of the file and initialization steps BigQ
 TEST(BigQTests, BigQInit) {
 // Setup
 File *file = new File();
@@ -35,6 +36,8 @@ strcpy(cstr, fileName.c_str());
 remove(cstr);
 }
 
+
+// Checks successful deletion of the file and shutdown of output pipe
 TEST(BigQTests, BigQFinish) {
 // Setup
 File *file = new File();
@@ -50,6 +53,7 @@ EXPECT_EQ(output.isDone(), true);
 }
 
 
+// It tests the number of records present from a single run, which should be equal to number of records inserted
 TEST(BigQTests, RunExtractionTest) {
 // Setup
 DBFile dbFile;
@@ -76,11 +80,12 @@ File *file = new File();
 std::string fileName = Init(file);
 OrderMaker *orderMaker = new OrderMaker(rschema);
 
-// Act
+
 SortSingleRunData(file, pages, orderMaker, 10, 0);
 
 SingleRun *run = new SingleRun(file, 0, 0);
 
+// Act
 RecordWrapper *wrapper = new RecordWrapper(0);
 int numberOfRecordsFound = 0;
 while (run->GetFirst(wrapper)) {
@@ -94,6 +99,7 @@ EXPECT_EQ(numberOfRecordsAdded, numberOfRecordsFound);
 Finish(file, fileName, output);
 }
 
+// It tests the sorting of the records in the single run and writing the run into the file
 TEST(BigQTests, BigQSortSingleRun) {
 // Setup
 DBFile dbFile;

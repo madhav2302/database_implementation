@@ -7,15 +7,14 @@
 #include "File.h"
 
 BigQ::BigQ(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
-    thread_data data = {.in =  in, .out =  out, .sortorder = sortorder, .runlen = runlen};
+    thread_data *data = new thread_data(in, out, sortorder, runlen);
 
     pthread_t worker_t;
-    pthread_create(&worker_t, NULL, TPMMS, (void *) &data);
-    pthread_join(worker_t, NULL);
+    pthread_create(&worker_t, NULL, TPMMS, (void *) data);
 }
 
 void *TPMMS(void *data) {
-    auto *threadData = (thread_data *) data;
+    thread_data *threadData = (thread_data *) data;
 
     File *file = new File();
     std::string fileName = Init(file);
@@ -37,7 +36,7 @@ void Phase1(File *file, Pipe &in, OrderMaker &sortorder, int runlen) {
     Page *page = new Page();
     int writePage = 0;
 
-    auto *temp = new Record();
+    Record *temp = new Record();
     vector<Page *> pages;
 
     while (in.Remove(temp)) {
@@ -60,7 +59,7 @@ void Phase1(File *file, Pipe &in, OrderMaker &sortorder, int runlen) {
 }
 
 int SortSingleRunData(File *file, vector<Page *> &pages, OrderMaker *sortorder, int runlen, int writePage) {
-    auto *temp = new Record();
+    Record *temp = new Record();
 
     std::priority_queue<Record *, vector<Record *>, CustomRecordCompare> pqueue(sortorder);
 
@@ -111,7 +110,7 @@ void Phase2(File *file, Pipe &out, OrderMaker &sortorder, int runlen) {
     std::priority_queue<RecordWrapper *, vector<RecordWrapper *>, CustomRecordCompare> pqueue(&sortorder);
 
     for (int i = 0; i < numberOfRuns; i++) {
-        auto *recordWrapperTemp = new RecordWrapper(i);
+        RecordWrapper *recordWrapperTemp = new RecordWrapper(i);
         if (runs[i]->GetFirst(recordWrapperTemp) == 1) {
             pqueue.push(recordWrapperTemp);
         }
@@ -122,7 +121,7 @@ void Phase2(File *file, Pipe &out, OrderMaker &sortorder, int runlen) {
         out.Insert(r->firstOne);
         pqueue.pop();
 
-        auto *recordWrapperTemp = new RecordWrapper(r->runArrayIndex);
+        RecordWrapper *recordWrapperTemp = new RecordWrapper(r->runArrayIndex);
         if (runs[r->runArrayIndex]->GetFirst(recordWrapperTemp) == 1) {
             pqueue.push(recordWrapperTemp);
         }
@@ -139,7 +138,7 @@ void Finish(File *file, std::string fileName, Pipe &out) {
     out.ShutDown();
 }
 
-BigQ::~BigQ() = default;
+BigQ::~BigQ() {};
 
 
 SingleRun::SingleRun(File *file, int startPage, int endPage) {

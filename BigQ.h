@@ -24,6 +24,14 @@ public:
  * Structure which we pass for TPMMS into the worker thread of BigQ
  */
 struct thread_data {
+    thread_data(Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) : in(in), out(out), sortorder(sortorder),
+                                                                          runlen(runlen) {
+        this->in = in;
+        this->out = out;
+        this->sortorder = sortorder;
+        this->runlen = runlen;
+    }
+
     Pipe &in;
     Pipe &out;
     OrderMaker &sortorder;

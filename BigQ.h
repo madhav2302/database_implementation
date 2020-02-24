@@ -101,6 +101,10 @@ public:
     RecordWrapper(int runArrayIndex) {
         this->runArrayIndex = runArrayIndex;
     }
+
+    ~RecordWrapper() {
+        delete firstOne;
+    }
 };
 
 /**

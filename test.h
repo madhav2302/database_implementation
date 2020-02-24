@@ -106,7 +106,14 @@ void setup () {
 }
 
 void cleanup () {
-	delete s, p, ps, n, li, r, o, c;
+	delete s;
+	delete p;
+	delete ps;
+	delete n;
+	delete li;
+	delete r;
+	delete o;
+	delete c;
 }
 
 #endif

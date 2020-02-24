@@ -9,6 +9,7 @@ fi
 
 rsync ${PARAM} \
   --exclude='.git' \
+  --exclude='.gitignore' \
   --exclude='cmake-build-debug' \
   --exclude='.idea' \
   --exclude='*.bin' \

@@ -1,8 +1,8 @@
 #ifndef TEST_H
 #define TEST_H
-#include <stdio.h>
+#include <cstdio>
 #include <iostream>
-#include <stdlib.h>
+#include <cstdlib>
 #include "Pipe.h"
 #include "DBFile.h"
 #include "Record.h"

@@ -10,8 +10,8 @@ tag = -n
 test_out_tag = -lfl
 endif
 
-myGtest.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o y.tab.o lex.yy.o myGtest.o
-	$(CC) -o myGtest.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o y.tab.o lex.yy.o myGtest.o $(test_out_tag) -lpthread -lgtest
+HeapFileGTests.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o y.tab.o lex.yy.o HeapFileGTests.o
+	$(CC) -o HeapFileGTests.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o y.tab.o lex.yy.o HeapFileGTests.o $(test_out_tag) -lpthread -lgtest
 
 BigQTests.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o y.tab.o lex.yy.o BigQTests.o
 	$(CC) -o BigQTests.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o Pipe.o y.tab.o lex.yy.o BigQTests.o $(test_out_tag) -lpthread -lgtest
@@ -25,8 +25,8 @@ a1test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o y.
 main: Record.o Comparison.o ComparisonEngine.o Schema.o File.o y.tab.o lex.yy.o main.o
 	$(CC) -o main Record.o Comparison.o ComparisonEngine.o Schema.o File.o y.tab.o lex.yy.o main.o $(test_out_tag)
 
-myGtest.o: myGtest.cc
-	$(CC) -g -c myGtest.cc
+HeapFileGTests.o: HeapFileGTests.cc
+	$(CC) -g -c HeapFileGTests.cc
 
 BigQTests.o: BigQTests.cc
 	$(CC) -g -c BigQTests.cc
@@ -82,3 +82,4 @@ clean:
 	rm -f y.tab.h
 	rm -f main
 	rm -f *.bin.bigq
+	rm -f tmp*.bin

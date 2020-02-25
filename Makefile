@@ -16,6 +16,9 @@ HeapFileGTests.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBF
 BigQTests.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o GenericDBFile.o Pipe.o y.tab.o lex.yy.o BigQTests.o
 	$(CC) -o BigQTests.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o GenericDBFile.o Pipe.o y.tab.o lex.yy.o BigQTests.o $(test_out_tag) -lpthread -lgtest
 
+test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o GenericDBFile.o Pipe.o y.tab.o lex.yy.o test.o
+	$(CC) -o test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o GenericDBFile.o Pipe.o y.tab.o lex.yy.o test.o $(test_out_tag) -lpthread
+
 a2test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o GenericDBFile.o Pipe.o y.tab.o lex.yy.o a2-test.o
 	$(CC) -o a2test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o GenericDBFile.o Pipe.o y.tab.o lex.yy.o a2-test.o $(test_out_tag) -lpthread
 
@@ -31,8 +34,12 @@ HeapFileGTests.o: HeapFileGTests.cc
 BigQTests.o: BigQTests.cc
 	$(CC) -g -c BigQTests.cc
 
-test.o: a2-test.cc
+test.o: test.cc
 	$(CC) -g -c test.cc
+
+
+a2test.o: a2-test.cc
+	$(CC) -g -c a2-test.cc
 
 a1-test.o: a1-test.cc
 	$(CC) -g -c a1-test.cc

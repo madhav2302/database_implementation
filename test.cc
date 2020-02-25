@@ -49,7 +49,7 @@ void test1() {
     dbfile.Close();
 
     char tbl_path[100];
-    sprintf(tbl_path, "%s%s.tbl", tpch_dir, rel->name());
+    sprintf(tbl_path, "%s%s.tbl", fileExists() ? remote_tpch_dir : tpch_dir, rel->name());
     cout << " input from file : " << tbl_path << endl;
 
     FILE *tblfile = fopen(tbl_path, "r");

@@ -26,7 +26,7 @@ add_executable(database_implementation main.cc
         TwoWayList.h
         lex.yy.c
         y.tab.o
-        )
+        HeapDBFile.cc SortedDBFile.cc HeapDBFile.h SortedDBFile.h)
 
 configure_file(catalog ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
@@ -50,7 +50,7 @@ add_executable(database_implementation_a1_test a1-test.cc
         TwoWayList.cc
         TwoWayList.h
         lex.yy.c
-        y.tab.o)
+        y.tab.o HeapDBFile.cc SortedDBFile.cc HeapDBFile.h SortedDBFile.h)
 
 add_executable(database_implementation_a2_p1_test a2-test.cc
         a2-test.h
@@ -77,7 +77,7 @@ add_executable(database_implementation_a2_p1_test a2-test.cc
         TwoWayList.h
         lex.yy.c
         y.tab.o
-        )
+        HeapDBFile.cc SortedDBFile.cc HeapDBFile.h SortedDBFile.h)
 
 add_executable(database_implementation_a2_p2_test test.cc
         test.h
@@ -104,6 +104,6 @@ add_executable(database_implementation_a2_p2_test test.cc
         TwoWayList.h
         lex.yy.c
         y.tab.o
-        )
+        HeapDBFile.cc SortedDBFile.cc HeapDBFile.h SortedDBFile.h)
 
 

@@ -1,6 +1,7 @@
 GTEST_CFLAGS = `pkg-config --cflags Google_tests`
 GTEST_LIBS = `pkg-config --libs Google_tests`
 CC = g++ -O2 -Wno-deprecated
+CLASSES = Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o GenericDBFile.o HeapDBFile.o SortedDBFile.o Pipe.o y.tab.o lex.yy.o
 
 tag = -i
 test_out_tag = -ll
@@ -10,23 +11,20 @@ tag = -n
 test_out_tag = -lfl
 endif
 
-HeapFileGTests.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o GenericDBFile.o y.tab.o lex.yy.o HeapFileGTests.o
-	$(CC) -o HeapFileGTests.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o GenericDBFile.o y.tab.o lex.yy.o HeapFileGTests.o $(test_out_tag) -lpthread -lgtest
+HeapFileGTests.out: $(CLASSES) HeapFileGTests.o
+	$(CC) -o HeapFileGTests.out $(CLASSES) HeapFileGTests.o $(test_out_tag) -lpthread -lgtest
 
-BigQTests.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o GenericDBFile.o Pipe.o y.tab.o lex.yy.o BigQTests.o
-	$(CC) -o BigQTests.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o GenericDBFile.o Pipe.o y.tab.o lex.yy.o BigQTests.o $(test_out_tag) -lpthread -lgtest
+BigQTests.out: $(CLASSES) BigQTests.o
+	$(CC) -o BigQTests.out $(CLASSES) BigQTests.o $(test_out_tag) -lpthread -lgtest
 
-test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o GenericDBFile.o Pipe.o y.tab.o lex.yy.o test.o
-	$(CC) -o test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o GenericDBFile.o Pipe.o y.tab.o lex.yy.o test.o $(test_out_tag) -lpthread
+test.out: $(CLASSES) test.o
+	$(CC) -o test.out $(CLASSES) test.o $(test_out_tag) -lpthread
 
-a2test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o GenericDBFile.o Pipe.o y.tab.o lex.yy.o a2-test.o
-	$(CC) -o a2test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o GenericDBFile.o Pipe.o y.tab.o lex.yy.o a2-test.o $(test_out_tag) -lpthread
+a2test.out: $(CLASSES) a2-test.o
+	$(CC) -o a2test.out $(CLASSES) a2-test.o $(test_out_tag) -lpthread
 
-a1test.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o GenericDBFile.o y.tab.o lex.yy.o a1-test.o
-	$(CC) -o a1test.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o DBFile.o GenericDBFile.o y.tab.o lex.yy.o a1-test.o $(test_out_tag)
-
-main: Record.o Comparison.o ComparisonEngine.o Schema.o File.o y.tab.o lex.yy.o main.o
-	$(CC) -o main Record.o Comparison.o ComparisonEngine.o Schema.o File.o y.tab.o lex.yy.o main.o $(test_out_tag)
+a1test.out: $(CLASSES) a1-test.o
+	$(CC) -o a1test.out $(CLASSES) a1-test.o $(test_out_tag)
 
 HeapFileGTests.o: HeapFileGTests.cc
 	$(CC) -g -c HeapFileGTests.cc
@@ -58,6 +56,12 @@ DBFile.o: DBFile.cc
 
 GenericDBFile.o: GenericDBFile.cc
 	$(CC) -g -c GenericDBFile.cc
+
+HeapDBFile.o: HeapDBFile.cc
+	$(CC) -g -c HeapDBFile.cc
+
+SortedDBFile.o: SortedDBFile.cc
+	$(CC) -g -c SortedDBFile.cc
 
 File.o: File.cc
 	$(CC) -g -c File.cc

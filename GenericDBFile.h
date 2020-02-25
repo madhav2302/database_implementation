@@ -11,7 +11,7 @@
 #include "Defs.h"
 
 class GenericDBFile {
-private:
+protected:
     /**
      * Stores the file type of DBFile
      */
@@ -63,7 +63,7 @@ private:
 public:
     GenericDBFile();
 
-    ~GenericDBFile();
+    virtual ~GenericDBFile();
 
     int Create(const char *fpath, fType file_type, void *startup);
 
@@ -79,9 +79,7 @@ public:
 
     int GetNext(Record &fetchme);
 
-    int GetNext(Record &fetchme, CNF &cnf, Record &literal);
-
-
+    virtual int GetNext(Record &fetchme, CNF &cnf, Record &literal) = 0;
 };
 
 

@@ -38,4 +38,14 @@ public:
 
 };
 
+struct SortInfo {
+    SortInfo(OrderMaker *myOrder, int runLength) : myOrder(myOrder), runLength(runLength) {
+        this->myOrder = myOrder;
+        this->runLength = runLength;
+    }
+
+    OrderMaker *myOrder;
+    int runLength;
+};
+
 #endif

@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <math.h>
+#include <fstream>
 
 #include "Pipe.h"
 #include "DBFile.h"
@@ -14,9 +15,17 @@ using namespace std;
 
 // make sure that the information below is correct
 
+bool fileExists() {
+    std::string fileName = "/cise/homes/msodhani/server.ignore";
+    ifstream f(fileName.c_str());
+    return f.good();
+}
+
+
 char *catalog_path = "catalog";
 char *dbfile_dir = "";
-char *tpch_dir = "/cise/tmp/dbi_sp11/DATA/1G/";
+char *tpch_dir = "/Users/madhavsodhani/projects/cpp/mock_data/";
+char *remote_tpch_dir = "/cise/homes/msodhani/mock_data/";
 
 
 extern "C" {

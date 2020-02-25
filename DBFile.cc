@@ -1,7 +1,8 @@
 #include "DBFile.h"
+#include "HeapDBFile.h"
 
 DBFile::DBFile() {
-    myInternalFile = new GenericDBFile();
+    this->myInternalFile = new HeapDBFile();
 }
 
 DBFile::~DBFile() {

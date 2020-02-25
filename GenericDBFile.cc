@@ -80,25 +80,6 @@ int GenericDBFile::GetNext(Record &fetchme) {
     return page->GetFirst(&fetchme);
 }
 
-
-int GenericDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
-    this->flushPageIfNeeded();
-
-    int foundFilteredValue = 0;
-
-    while ((foundFilteredValue = page->GetFirst(&fetchme)) == 1 || readPage < writePage) {
-        if (foundFilteredValue == 1) {
-            if (comp->Compare(&fetchme, &literal, &cnf)) {
-                return 1;
-            }
-        } else {
-            file->GetPage(page, readPage++);
-        }
-    }
-
-    return 0;
-}
-
 void GenericDBFile::flushPageIfNeeded() {
     if (needFlush) {
         cout << "Flushing while switching from writes to read\n";

@@ -8,6 +8,7 @@ if [ "$#" -eq 1 ]; then
 fi
 
 rsync ${PARAM} \
+  --delete \
   --exclude='.git' \
   --exclude='.gitignore' \
   --exclude='cmake-build-debug' \

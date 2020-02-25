@@ -49,8 +49,8 @@ add_executable(database_implementation_a1_test a1-test.cc
 
 include_directories(.)
 
-add_executable(database_implementation_a2_test test.cc
-        test.h
+add_executable(database_implementation_a2_test a2-test.cc
+        a2-test.h
         BigQ.cc
         BigQ.h
         Pipe.cc

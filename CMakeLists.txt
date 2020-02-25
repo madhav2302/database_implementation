@@ -22,7 +22,7 @@ add_executable(database_implementation main.cc
         TwoWayList.h
         lex.yy.c
         y.tab.o
-        )
+        GenericDBFile.cc GenericDBFile.h)
 
 configure_file(catalog ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
@@ -45,7 +45,7 @@ add_executable(database_implementation_a1_test a1-test.cc
         TwoWayList.h
         lex.yy.c
         y.tab.o
-        )
+        GenericDBFile.cc GenericDBFile.h)
 
 include_directories(.)
 
@@ -72,6 +72,6 @@ add_executable(database_implementation_a2_test test.cc
         TwoWayList.h
         lex.yy.c
         y.tab.o
-        )
+        GenericDBFile.cc GenericDBFile.h)
 
 

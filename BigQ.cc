@@ -22,8 +22,6 @@ void *TPMMS(void *data) {
     Phase2(file, threadData->out, threadData->sortorder, threadData->runlen);
     Finish(file, fileName, threadData->out);
 
-    delete threadData;
-    delete file;
     return nullptr;
 }
 
@@ -59,9 +57,6 @@ void Phase1(File *file, Pipe &in, OrderMaker &sortorder, int runlen) {
 
     // Sorting remaining records as run
     while (!pages.empty()) writePage = SortSingleRunData(file, pages, &sortorder, runlen, writePage);
-
-    delete page;
-    delete temp;
 }
 
 int SortSingleRunData(File *file, vector<Page *> &pages, OrderMaker *sortorder, int runlen, int writePage) {
@@ -101,9 +96,6 @@ int SortSingleRunData(File *file, vector<Page *> &pages, OrderMaker *sortorder, 
     } else {
         file->AddPage(bufferPage, writePage++);
     }
-
-    delete bufferPage;
-    delete temp;
 
     return writePage;
 }

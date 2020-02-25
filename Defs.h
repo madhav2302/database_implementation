@@ -15,6 +15,9 @@ enum Type {Int, Double, String};
 
 unsigned int Random_Generate();
 
+typedef enum {
+    heap, sorted, tree
+} fType;
 
 #endif
 

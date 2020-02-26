@@ -59,6 +59,18 @@ public:
 
 	// print to the screen
 	void Print ();
+
+    int getNumAtts();
+
+    void setNumAtts(int numAtts);
+
+    int getWhichAtts(int index);
+
+    void setWhichAtts(int index, int value);
+
+    Type getWhichTypes(int index);
+
+    void setWhichTypes(int index, Type type);
 };
 
 class Record;

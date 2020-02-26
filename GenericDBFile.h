@@ -10,13 +10,18 @@
 #include "ComparisonEngine.h"
 #include "Defs.h"
 
+struct SortInfo {
+    SortInfo(OrderMaker *myOrder, int runLength) : myOrder(myOrder), runLength(runLength) {
+        this->myOrder = myOrder;
+        this->runLength = runLength;
+    }
+
+    OrderMaker *myOrder;
+    int runLength;
+};
+
 class GenericDBFile {
 protected:
-    /**
-     * Stores the file type of DBFile
-     */
-    fType fileType;
-
     /**
      * Object of a file.
      */
@@ -60,16 +65,18 @@ protected:
      */
     void flushPage();
 
+    virtual void writeMetadata(const char *fpath, fType file_type, void *startup) = 0;
+
 public:
     GenericDBFile();
 
     virtual ~GenericDBFile();
 
-    int Create(const char *fpath, fType file_type, void *startup);
+    virtual int Create(const char *fpath, fType file_type, void *startup);
 
-    int Open(const char *fpath);
+    virtual int Open(const char *fpath);
 
-    int Close();
+    virtual int Close();
 
     void Load(Schema &myschema, const char *loadpath);
 

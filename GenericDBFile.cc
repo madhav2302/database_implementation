@@ -13,9 +13,9 @@ GenericDBFile::~GenericDBFile() {
     delete comp;
 }
 
-int GenericDBFile::Create(const char *f_path, fType f_type, void *startup) {
-    this->fileType = f_type;
-    this->file->Open(0, (char *) f_path);
+int GenericDBFile::Create(const char *fpath, fType file_type, void *startup) {
+    this->writeMetadata(fpath, file_type, startup);
+    this->file->Open(0, (char *) fpath);
     this->writePage = 0;
     return 1;
 }

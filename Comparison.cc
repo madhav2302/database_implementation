@@ -117,6 +117,26 @@ void OrderMaker :: Print () {
 	}
 }
 
+int OrderMaker::getNumAtts() {
+    return numAtts;
+}
+
+void OrderMaker::setNumAtts(int numAtts) {
+    this->numAtts = numAtts;
+}
+
+int OrderMaker::getWhichAtts(int index)  {
+    return whichAtts[index];
+}
+void OrderMaker::setWhichAtts(int index, int value) {
+    whichAtts[index] = value;
+}
+Type OrderMaker::getWhichTypes(int index) {
+    return whichTypes[index];
+}
+void OrderMaker::setWhichTypes(int index, Type type) {
+    whichTypes[index] = type;
+}
 
 
 int CNF :: GetSortOrders (OrderMaker &left, OrderMaker &right) {

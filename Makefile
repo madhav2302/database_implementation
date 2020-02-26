@@ -24,7 +24,7 @@ a2test.out: $(CLASSES) a2-test.o
 	$(CC) -o a2test.out $(CLASSES) a2-test.o $(test_out_tag) -lpthread
 
 a1test.out: $(CLASSES) a1-test.o
-	$(CC) -o a1test.out $(CLASSES) a1-test.o $(test_out_tag)
+	$(CC) -o a1test.out $(CLASSES) a1-test.o $(test_out_tag) -lpthread
 
 HeapFileGTests.o: HeapFileGTests.cc
 	$(CC) -g -c HeapFileGTests.cc
@@ -96,4 +96,5 @@ clean:
 	rm -f y.tab.h
 	rm -f main
 	rm -f *.bin.bigq
+	rm -f *.bin.bigq.metadata
 	rm -f tmp*.bin

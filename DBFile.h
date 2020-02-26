@@ -14,6 +14,10 @@ class DBFile {
 
 private:
     GenericDBFile *myInternalFile;
+
+    static fType readFileType(const char *fpath);
+
+    void initInternalFile(fType f_type);
 public:
     DBFile();
 
@@ -34,18 +38,6 @@ public:
     int GetNext(Record &fetchme);
 
     int GetNext(Record &fetchme, CNF &cnf, Record &literal);
-
-
-};
-
-struct SortInfo {
-    SortInfo(OrderMaker *myOrder, int runLength) : myOrder(myOrder), runLength(runLength) {
-        this->myOrder = myOrder;
-        this->runLength = runLength;
-    }
-
-    OrderMaker *myOrder;
-    int runLength;
 };
 
 #endif

@@ -28,26 +28,9 @@ protected:
     File *file;
 
     /**
-     * Page used for reads and writes.
-     */
-    Page *page;
-
-    /**
      * The comparator engine is used by GetNext method which filters records based on CNF passed to it.
      */
     ComparisonEngine *comp;
-
-    // We keep separate cursor for reading and writing the page, so we don't need to remember any of them.
-
-    /**
-     * Current page where we will append the records
-     */
-    off_t writePage = 0;
-
-    /**
-     * Current page from which we will read the data.
-     */
-    off_t readPage = 0;
 
     /**
      * Used as a flag to determine if page need to be flushed while switching from writes to read.
@@ -63,9 +46,11 @@ protected:
      * Flush the page into the file.
      * The page won't have any records after it.
      */
-    void flushPage();
+    virtual void flushPage() = 0;
 
     virtual void writeMetadata(const char *fpath, fType file_type, void *startup) = 0;
+
+    virtual void readMetadata(const char *fpath) = 0;
 
 public:
     GenericDBFile();
@@ -76,15 +61,15 @@ public:
 
     virtual int Open(const char *fpath);
 
-    virtual int Close();
+    virtual int Close() = 0;
 
     void Load(Schema &myschema, const char *loadpath);
 
-    void MoveFirst();
+    virtual void MoveFirst() = 0;
 
-    void Add(Record &addme);
+    virtual void Add(Record &addme) = 0;
 
-    int GetNext(Record &fetchme);
+    virtual int GetNext(Record &fetchme) = 0;
 
     virtual int GetNext(Record &fetchme, CNF &cnf, Record &literal) = 0;
 };

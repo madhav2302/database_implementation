@@ -11,6 +11,9 @@ tag = -n
 test_out_tag = -lfl
 endif
 
+main: $(CLASSES) main.o
+	$(CC) -o main $(CLASSES) main.o $(test_out_tag) -lpthread -lgtest
+
 HeapFileGTests.out: $(CLASSES) HeapFileGTests.o
 	$(CC) -o HeapFileGTests.out $(CLASSES) HeapFileGTests.o $(test_out_tag) -lpthread -lgtest
 

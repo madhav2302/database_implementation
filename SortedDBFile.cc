@@ -3,15 +3,59 @@
 #include <fstream>
 
 SortedDBFile::SortedDBFile() {
+    page = new Page();
     cerr << "Create instance of SortedDBFile\n";
 }
 
 SortedDBFile::~SortedDBFile() {
+    delete page;
 }
 
 int SortedDBFile::Create(const char *fpath, fType file_type, void *startup) {
     this->sortInfo = (SortInfo *) startup;
     return GenericDBFile::Create(fpath, file_type, startup);
+}
+
+int SortedDBFile::Open(const char *fpath) {
+    return GenericDBFile::Open(fpath);
+}
+
+int SortedDBFile::Close() {
+    this->flushPageIfNeeded();
+
+    return file->Close();
+}
+
+void SortedDBFile::MoveFirst() {
+    this->flushPageIfNeeded();
+
+    this->readPage = 0;
+    page->EmptyItOut();
+    file->GetPage(page, readPage++);
+}
+
+void SortedDBFile::Add(Record &addme) {
+    if (!needFlush) {
+        int buffSize = 100;
+        in = new Pipe(buffSize);
+        out = new Pipe(buffSize);
+        bigQ = new BigQ(*(in), *(out), *(sortInfo->myOrder), sortInfo->runLength);
+    }
+
+    in->Insert(&addme);
+    needFlush = true;
+}
+
+int SortedDBFile::GetNext(Record &fetchme) {
+    this->flushPageIfNeeded();
+
+    if (page->GetFirst(&fetchme) == 1) return 1;
+
+    if (readPage < file->GetLength() - 1) {
+        file->GetPage(page, readPage++);
+    }
+
+    return page->GetFirst(&fetchme);
 }
 
 int SortedDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
@@ -30,6 +74,46 @@ int SortedDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
     }
 
     return 0;
+}
+
+void SortedDBFile::flushPage() {
+    in->ShutDown();
+
+    File tempFile;
+    std::string fileName("sorted_" + randomFileName());
+    char cstr[fileName.size() + 1];
+    strcpy(cstr, fileName.c_str());
+    tempFile.Open(0, cstr);
+
+    Page tempPage;
+    Record tempRecord;
+
+    off_t tempWritePage = 0;
+    while (out->Remove(&tempRecord)) {
+        if (tempPage.Append(&tempRecord) != 1) {
+            tempFile.AddPage(&tempPage, tempWritePage++);
+            tempPage.EmptyItOut();
+            tempPage.Append(&tempRecord);
+        }
+    }
+
+    tempFile.AddPage(&tempPage, tempWritePage++);
+    tempPage.EmptyItOut();
+    tempFile.Close();
+
+    // Write into actual file
+    tempFile.Open(1, cstr);
+
+    for (int pageNumber = 0; pageNumber < tempFile.GetLength() - 1; pageNumber++) {
+        tempFile.GetPage(&tempPage, pageNumber);
+        file->AddPage(&tempPage, pageNumber);
+    }
+
+    delete bigQ;
+    delete in;
+    delete out;
+
+    needFlush = false;
 }
 
 void SortedDBFile::writeMetadata(const char *fpath, fType file_type, void *startup) {
@@ -54,6 +138,8 @@ void SortedDBFile::writeMetadata(const char *fpath, fType file_type, void *start
 }
 
 void SortedDBFile::readMetadata(const char *fpath) {
+    writePage = file->GetLength() - 1;
+
     OrderMaker *orderMaker = new OrderMaker();
     this->sortInfo = new SortInfo(orderMaker, 0);
     string line;
@@ -82,14 +168,3 @@ void SortedDBFile::readMetadata(const char *fpath) {
         exit(1);
     }
 }
-
-int SortedDBFile::Open(const char *fpath) {
-    readMetadata(fpath);
-    return GenericDBFile::Open(fpath);
-}
-
-int SortedDBFile::Close() {
-    return GenericDBFile::Close();
-}
-
-

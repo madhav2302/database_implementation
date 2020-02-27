@@ -8,6 +8,8 @@ void test2();
 
 void test3();
 
+void test4();
+
 int add_data(FILE *src, int numrecs, int &res) {
     DBFile dbfile;
     dbfile.Open(rel->path());
@@ -25,6 +27,57 @@ int add_data(FILE *src, int numrecs, int &res) {
     return proc;
 }
 
+void test4() {
+    OrderMaker o;
+    rel->get_sort_order(o);
+
+    int runlen = 100;
+
+    struct {
+        OrderMaker *o;
+        int l;
+    } startup = {&o, runlen};
+
+    DBFile dbfile;
+    dbfile.Create(rel->path(), sorted, &startup);
+
+    char tbl_path[100]; // construct path of the tpch flat text file
+    sprintf(tbl_path, "%s%s.tbl", tpch_dir, rel->name());
+    cout << " tpch file will be loaded from " << tbl_path << endl;
+    dbfile.Load(*(rel->schema()), tbl_path);
+    dbfile.Close();
+
+    dbfile.Open(rel->path());
+    dbfile.MoveFirst();
+
+
+    ComparisonEngine ceng;
+
+    int err = 0;
+    int i = 0;
+
+    Record rec[2];
+    Record *last = NULL, *prev = NULL;
+
+    while (dbfile.GetNext(rec[i%2])) {
+        prev = last;
+        last = &rec[i%2];
+
+        if (prev && last) {
+            if (ceng.Compare (prev, last, startup.o) == 1) {
+                err++;
+            }
+        }
+        i++;
+    }
+
+    cerr << " consumer: " << (i - err) << " recs out of " << i << " recs in sorted order \n";
+    if (err) {
+        cerr << " consumer: " <<  err << " recs failed sorted order test \n" << endl;
+    }
+
+    dbfile.Close();
+}
 
 // create a dbfile interactively
 void test1() {
@@ -131,15 +184,16 @@ int main(int argc, char *argv[]) {
     setup();
 
     relation *rel_ptr[] = {n, r, c, p, ps, s, o, li};
-    void (*test_ptr[])() = {&test1, &test2, &test3};
+    void (*test_ptr[])() = {&test1, &test2, &test3, &test4};
     void (*test)();
 
     int tindx = 0;
-    while (tindx < 1 || tindx > 3) {
+    while (tindx < 1 || tindx > 4) {
         cout << " select test option: \n";
         cout << " \t 1. create sorted dbfile\n";
         cout << " \t 2. scan a dbfile\n";
-        cout << " \t 3. run some query \n \t ";
+        cout << " \t 3. run some query \n ";
+        cout << " \t 4. Load data as sorted file \n \t ";
         cin >> tindx;
     }
 

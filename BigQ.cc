@@ -26,7 +26,7 @@ void *TPMMS(void *data) {
 }
 
 std::string Init(File *file) {
-    std::string fileName(randomFileName());
+    std::string fileName("bigq_" + randomFileName());
     char cstr[fileName.size() + 1];
     strcpy(cstr, fileName.c_str());
     file->Open(0, cstr);

@@ -42,7 +42,7 @@ fType DBFile::readFileType(const char *fpath) {
         file_type = (fType) std::stoi(line);
         metadata_read.close();
     } else {
-        cout << "Unable to open file for read " << fpath << '\n';
+        cout << "Unable to open file for read " << fpath << ".metadata" << '\n';
         exit(1);
     }
 

@@ -18,10 +18,18 @@ void *TPMMS(void *data) {
 
     File *file = new File();
     std::string fileName = Init(file);
-    Phase1(file, threadData->in, threadData->sortorder, threadData->runlen);
-    Phase2(file, threadData->out, threadData->sortorder, threadData->runlen);
-    Finish(file, fileName, threadData->out);
+    cout << "BigQ INIT complete, using " << fileName << '\n';
 
+    Phase1(file, threadData->in, threadData->sortorder, threadData->runlen);
+    cout << "Phase 1 complete\n";
+
+    Phase2(file, threadData->out, threadData->sortorder, threadData->runlen);
+    cout << "Phase 2 complete\n";
+
+    Finish(file, fileName, threadData->out);
+    cout << "BigQ Finished\n";
+
+    delete file;
     return nullptr;
 }
 

@@ -1,10 +1,10 @@
 #ifndef TEST_H
 #define TEST_H
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
-#include <math.h>
+#include <cmath>
 #include <fstream>
 
 #include "Pipe.h"
@@ -24,9 +24,8 @@ bool fileExists() {
 
 char *catalog_path = "catalog";
 char *dbfile_dir = "";
-char *tpch_dir = "/Users/madhavsodhani/projects/cpp/mock_data/";
-char *remote_tpch_dir = "/cise/homes/msodhani/mock_data/";
-
+const char *tpch_dir = (fileExists() ? "/cise/homes/msodhani/tpch-dbgen/"
+                                     : "/Users/madhavsodhani/projects/cpp/mock_data_1gb/");
 
 extern "C" {
 int yyparse(void);   // defined in y.tab.c

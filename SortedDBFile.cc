@@ -16,10 +16,6 @@ int SortedDBFile::Create(const char *fpath, fType file_type, void *startup) {
     return GenericDBFile::Create(fpath, file_type, startup);
 }
 
-int SortedDBFile::Open(const char *fpath) {
-    return GenericDBFile::Open(fpath);
-}
-
 int SortedDBFile::Close() {
     this->flushPageIfNeeded();
 

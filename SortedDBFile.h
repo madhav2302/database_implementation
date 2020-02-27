@@ -44,8 +44,6 @@ public:
 
     int Create(const char *fpath, fType file_type, void *startup) override;
 
-    int Open(const char *fpath) override;
-
     int Close() override;
 
     void MoveFirst() override;

@@ -16,10 +16,6 @@ int HeapDBFile::Create(const char *fpath, fType file_type, void *startup) {
     return GenericDBFile::Create(fpath, file_type, startup);
 }
 
-int HeapDBFile::Open(const char *fpath) {
-    return GenericDBFile::Open(fpath);
-}
-
 int HeapDBFile::Close() {
     this->flushPageIfNeeded();
 

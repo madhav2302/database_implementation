@@ -59,7 +59,7 @@ public:
 
     virtual int Create(const char *fpath, fType file_type, void *startup);
 
-    virtual int Open(const char *fpath);
+    int Open(const char *fpath);
 
     virtual int Close() = 0;
 

@@ -38,11 +38,13 @@ void GenericDBFile::Load(Schema &f_schema, const char *loadpath) {
 
     // Flush the page with rest of the records
     flushPage();
+    MoveFirst();
 }
 
 void GenericDBFile::flushPageIfNeeded() {
     if (needFlush) {
         cout << "Flushing while switching from writes to read\n";
         flushPage();
+        MoveFirst();
     }
 }

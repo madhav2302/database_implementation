@@ -10,6 +10,8 @@ void test3();
 
 void test4();
 
+void testOrder(OrderMaker *orderMaker);
+
 int add_data(FILE *src, int numrecs, int &res) {
     DBFile dbfile;
     dbfile.Open(rel->path());
@@ -17,11 +19,13 @@ int add_data(FILE *src, int numrecs, int &res) {
 
     int proc = 0;
     int xx = 20000;
-    while ((res = temp.SuckNextRecord(rel->schema(), src)) && ++proc < numrecs) {
+    while (++proc < numrecs && (res = temp.SuckNextRecord(rel->schema(), src))) {
         dbfile.Add(temp);
         if (proc == xx) cerr << "\t ";
         if (proc % xx == 0) cerr << ".";
     }
+
+    if (proc < numrecs) proc --;
 
     dbfile.Close();
     return proc;
@@ -47,6 +51,11 @@ void test4() {
     dbfile.Load(*(rel->schema()), tbl_path);
     dbfile.Close();
 
+    testOrder(&o);
+}
+
+void testOrder(OrderMaker *orderMaker) {
+    DBFile dbfile;
     dbfile.Open(rel->path());
     dbfile.MoveFirst();
 
@@ -64,7 +73,7 @@ void test4() {
         last = &rec[i%2];
 
         if (prev && last) {
-            if (ceng.Compare (prev, last, startup.o) == 1) {
+            if (ceng.Compare (prev, last, orderMaker) == 1) {
                 err++;
             }
         }
@@ -86,7 +95,7 @@ void test1() {
     OrderMaker o;
     rel->get_sort_order(o);
 
-    int runlen = 0;
+    int runlen = 100;
     while (runlen < 1) {
         cout << "\t\n specify runlength:\n\t ";
         cin >> runlen;
@@ -111,7 +120,7 @@ void test1() {
 
     int proc = 1, res = 1, tot = 0;
     while (proc && res) {
-        int x = 0;
+        int x = 2;
         while (x < 1 || x > 3) {
             cout << "\n select option for : " << rel->path() << endl;
             cout << " \t 1. add a few (1 to 1k recs)\n";
@@ -130,6 +139,8 @@ void test1() {
     }
     cout << "\n create finished.. " << tot << " recs inserted\n";
     fclose(tblfile);
+
+    testOrder(&o);
 }
 
 // sequential scan of a DBfile 

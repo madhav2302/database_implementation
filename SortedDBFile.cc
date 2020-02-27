@@ -1,6 +1,7 @@
 #include "SortedDBFile.h"
 #include <iostream>
 #include <fstream>
+#include <cstring>
 
 SortedDBFile::SortedDBFile() {
     page = new Page();
@@ -37,7 +38,6 @@ void SortedDBFile::Add(Record &addme) {
         out = new Pipe(buffSize);
         bigQ = new BigQ(*(in), *(out), *(sortInfo->myOrder), sortInfo->runLength);
     }
-
     in->Insert(&addme);
     needFlush = true;
 }
@@ -81,24 +81,69 @@ void SortedDBFile::flushPage() {
     strcpy(cstr, fileName.c_str());
     tempFile.Open(0, cstr);
 
+    // Used to write into temp file which contains combined records of existing file and output pipe in sorted order
     Page tempPage;
-    Record tempRecord;
-
     off_t tempWritePage = 0;
-    while (out->Remove(&tempRecord)) {
-        if (tempPage.Append(&tempRecord) != 1) {
+
+    // Used for reading record from output pipe
+    Record outPipeTempRecord;
+
+    // Used for managing
+    int foundRecordInFile = 0;
+    Page fileTempPage;
+    Record fileTempRecord;
+    off_t tempReadCursor = 0;
+    off_t fileLength = file->GetLength() - 1;
+    bool recordPresentInFileTempRecord = false;
+
+    while (out->Remove(&outPipeTempRecord)) {
+        bool readOutPipeRecord = false;
+        while (recordPresentInFileTempRecord || (foundRecordInFile = fileTempPage.GetFirst(&fileTempRecord)) == 1 ||
+               tempReadCursor < fileLength) {
+            if (foundRecordInFile) {
+                if (comp->Compare(&outPipeTempRecord, &fileTempRecord, sortInfo->myOrder) < 1) {
+                    if (tempPage.Append(&outPipeTempRecord) != 1) {
+                        tempFile.AddPage(&tempPage, tempWritePage++);
+                        tempPage.EmptyItOut();
+                        tempPage.Append(&outPipeTempRecord);
+                    }
+                    readOutPipeRecord = true;
+                    recordPresentInFileTempRecord = true;
+                    break;
+                } else {
+                    if (tempPage.Append(&fileTempRecord) != 1) {
+                        tempFile.AddPage(&tempPage, tempWritePage++);
+                        tempPage.EmptyItOut();
+                        tempPage.Append(&fileTempRecord);
+                    }
+                    recordPresentInFileTempRecord = false;
+                };
+            } else {
+                file->GetPage(&fileTempPage, tempReadCursor++);
+            }
+        }
+
+        if (!readOutPipeRecord && tempPage.Append(&outPipeTempRecord) != 1) {
             tempFile.AddPage(&tempPage, tempWritePage++);
             tempPage.EmptyItOut();
-            tempPage.Append(&tempRecord);
+            tempPage.Append(&outPipeTempRecord);
+        }
+    }
+
+    while ((foundRecordInFile = fileTempPage.GetFirst(&fileTempRecord)) == 1 || tempReadCursor < fileLength) {
+        if (foundRecordInFile) {
+            if (tempPage.Append(&fileTempRecord) != 1) {
+                tempFile.AddPage(&tempPage, tempWritePage++);
+                tempPage.EmptyItOut();
+                tempPage.Append(&fileTempRecord);
+            }
+        } else {
+            file->GetPage(&fileTempPage, tempReadCursor++);
         }
     }
 
     tempFile.AddPage(&tempPage, tempWritePage++);
     tempPage.EmptyItOut();
-    tempFile.Close();
-
-    // Write into actual file
-    tempFile.Open(1, cstr);
 
     for (int pageNumber = 0; pageNumber < tempFile.GetLength() - 1; pageNumber++) {
         tempFile.GetPage(&tempPage, pageNumber);
@@ -108,6 +153,7 @@ void SortedDBFile::flushPage() {
     delete bigQ;
     delete in;
     delete out;
+    remove(cstr);
 
     needFlush = false;
 }

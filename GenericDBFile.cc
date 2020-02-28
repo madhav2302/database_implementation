@@ -42,9 +42,9 @@ void GenericDBFile::Load(Schema &f_schema, const char *loadpath) {
 }
 
 void GenericDBFile::FlushPageIfNeeded() {
-    if (needFlush) {
-        cout << "Flushing while switching from writes to read\n";
-        FlushPage();
-        MoveFirst();
-    }
+    if (!needFlush) return;
+
+    cout << "Flushing while switching from writes to read\n";
+    FlushPage();
+    MoveFirst();
 }

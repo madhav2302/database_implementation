@@ -95,7 +95,7 @@ void test1() {
     OrderMaker o;
     rel->get_sort_order(o);
 
-    int runlen = 100;
+    int runlen = fileExists() ? 0 : 1000;
     while (runlen < 1) {
         cout << "\t\n specify runlength:\n\t ";
         cin >> runlen;
@@ -120,7 +120,7 @@ void test1() {
 
     int proc = 1, res = 1, tot = 0;
     while (proc && res) {
-        int x = 2;
+        int x = fileExists() ? 0 : 2;
         while (x < 1 || x > 3) {
             cout << "\n select option for : " << rel->path() << endl;
             cout << " \t 1. add a few (1 to 1k recs)\n";

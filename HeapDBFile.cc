@@ -44,11 +44,7 @@ int HeapDBFile::GetNext(Record &fetchme) {
     this->FlushPageIfNeeded();
 
     if (page->GetFirst(&fetchme) == 1) return 1;
-
-    if (readPage < writePage) {
-        file->GetPage(page, readPage++);
-    }
-
+    if (readPage < writePage) file->GetPage(page, readPage++);
     return page->GetFirst(&fetchme);
 }
 
@@ -59,9 +55,7 @@ int HeapDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
 
     while ((foundFilteredValue = page->GetFirst(&fetchme)) == 1 || readPage < writePage) {
         if (foundFilteredValue == 1) {
-            if (comp->Compare(&fetchme, &literal, &cnf)) {
-                return 1;
-            }
+            if (comp->Compare(&fetchme, &literal, &cnf)) return 1;
         } else {
             file->GetPage(page, readPage++);
         }

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+make clean
 make a2test.out
 
 echo "**************** TEST 1 ****************"

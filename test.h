@@ -25,7 +25,7 @@ bool fileExists() {
 char *catalog_path = "catalog";
 char *dbfile_dir = "";
 const char *tpch_dir = (fileExists() ? "/cise/homes/msodhani/tpch-dbgen/"
-                                     : "/Users/madhavsodhani/projects/cpp/mock_data_1gb/");
+                                     : "/Users/madhavsodhani/projects/cpp/mock_data/");
 
 extern "C" {
 int yyparse(void);   // defined in y.tab.c

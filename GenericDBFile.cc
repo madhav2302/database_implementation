@@ -12,14 +12,14 @@ GenericDBFile::~GenericDBFile() {
 }
 
 int GenericDBFile::Create(const char *fpath, fType file_type, void *startup) {
-    this->writeMetadata(fpath, file_type, startup);
+    this->WriteMetadata(fpath, file_type, startup);
     this->file->Open(0, (char *) fpath);
     return 1;
 }
 
 int GenericDBFile::Open(const char *f_path) {
     file->Open(1, (char *) f_path);
-    readMetadata(f_path);
+    ReadMetadata(f_path);
     return 1;
 }
 
@@ -37,14 +37,14 @@ void GenericDBFile::Load(Schema &f_schema, const char *loadpath) {
     }
 
     // Flush the page with rest of the records
-    flushPage();
+    FlushPage();
     MoveFirst();
 }
 
-void GenericDBFile::flushPageIfNeeded() {
+void GenericDBFile::FlushPageIfNeeded() {
     if (needFlush) {
         cout << "Flushing while switching from writes to read\n";
-        flushPage();
+        FlushPage();
         MoveFirst();
     }
 }

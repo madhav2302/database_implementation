@@ -40,17 +40,17 @@ protected:
     /**
      * Flush the page if it have some records while switching from writes to read.
      */
-    void flushPageIfNeeded();
+    void FlushPageIfNeeded();
 
     /**
      * Flush the page into the file.
      * The page won't have any records after it.
      */
-    virtual void flushPage() = 0;
+    virtual void FlushPage() = 0;
 
-    virtual void writeMetadata(const char *fpath, fType file_type, void *startup) = 0;
+    virtual void WriteMetadata(const char *fpath, fType file_type, void *startup) = 0;
 
-    virtual void readMetadata(const char *fpath) = 0;
+    virtual void ReadMetadata(const char *fpath) = 0;
 
 public:
     GenericDBFile();

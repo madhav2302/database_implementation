@@ -19,24 +19,24 @@ private:
     Pipe *out;
 
     /**
-     * Page used for reads and writes.
+     * Page used for reads.
      */
-    Page *page;
+    Page *readPage;
 
     /**
      * Current page from which we will read the data.
      */
-    off_t readPage = 0;
-    off_t writePage = 0;
+    off_t readCursor = 0;
 
     SortInfo *sortInfo;
 
-    void writeMetadata(const char *fpath, fType file_type, void *startup) override;
+    void WriteMetadata(const char *fpath, fType file_type, void *startup) override;
 
-    void readMetadata(const char *fpath) override;
+    void ReadMetadata(const char *fpath) override;
 
-    void flushPage() override;
+    void FlushPage() override;
 
+    int AppendRecord(File *tempFile, Page *tempPage, Record *addme, off_t writePage);
 public:
     SortedDBFile();
 

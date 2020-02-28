@@ -24,11 +24,11 @@ private:
      */
     off_t readPage = 0;
 
-    void writeMetadata(const char *fpath, fType file_type, void *startup) override;
+    void WriteMetadata(const char *fpath, fType file_type, void *startup) override;
 
-    void readMetadata(const char *fpath) override;
+    void ReadMetadata(const char *fpath) override;
 
-    void flushPage() override;
+    void FlushPage() override;
 
 public:
     HeapDBFile();

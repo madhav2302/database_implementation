@@ -4,12 +4,12 @@
 #include <cstring>
 
 SortedDBFile::SortedDBFile() {
-    page = new Page();
+    readPage = new Page();
     cerr << "Create instance of SortedDBFile\n";
 }
 
 SortedDBFile::~SortedDBFile() {
-    delete page;
+    delete readPage;
 }
 
 int SortedDBFile::Create(const char *fpath, fType file_type, void *startup) {
@@ -18,17 +18,17 @@ int SortedDBFile::Create(const char *fpath, fType file_type, void *startup) {
 }
 
 int SortedDBFile::Close() {
-    this->flushPageIfNeeded();
+    this->FlushPageIfNeeded();
 
     return file->Close();
 }
 
 void SortedDBFile::MoveFirst() {
-    this->flushPageIfNeeded();
+    this->FlushPageIfNeeded();
 
-    this->readPage = 0;
-    page->EmptyItOut();
-    file->GetPage(page, readPage++);
+    this->readCursor = 0;
+    readPage->EmptyItOut();
+    file->GetPage(readPage, readCursor++);
 }
 
 void SortedDBFile::Add(Record &addme) {
@@ -43,36 +43,45 @@ void SortedDBFile::Add(Record &addme) {
 }
 
 int SortedDBFile::GetNext(Record &fetchme) {
-    this->flushPageIfNeeded();
+    this->FlushPageIfNeeded();
 
-    if (page->GetFirst(&fetchme) == 1) return 1;
+    if (readPage->GetFirst(&fetchme) == 1) return 1;
 
-    if (readPage < file->GetLength() - 1) {
-        file->GetPage(page, readPage++);
+    if (readCursor < file->GetLength() - 1) {
+        file->GetPage(readPage, readCursor++);
     }
 
-    return page->GetFirst(&fetchme);
+    return readPage->GetFirst(&fetchme);
 }
 
 int SortedDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
-    this->flushPageIfNeeded();
+    this->FlushPageIfNeeded();
 
     int foundFilteredValue = 0;
 
-    while ((foundFilteredValue = page->GetFirst(&fetchme)) == 1 || readPage < writePage) {
+    while ((foundFilteredValue = readPage->GetFirst(&fetchme)) == 1 || readCursor < file->GetLength() - 1) {
         if (foundFilteredValue == 1) {
             if (comp->Compare(&fetchme, &literal, &cnf)) {
                 return 1;
             }
         } else {
-            file->GetPage(page, readPage++);
+            file->GetPage(readPage, readCursor++);
         }
     }
 
     return 0;
 }
 
-void SortedDBFile::flushPage() {
+int SortedDBFile::AppendRecord(File *tempFile, Page *tempPage, Record *addme, off_t writePage) {
+    if (tempPage->Append(addme) != 1) {
+        tempFile->AddPage(tempPage, writePage++);
+        tempPage->EmptyItOut();
+        tempPage->Append(addme);
+    }
+    return writePage;
+}
+
+void SortedDBFile::FlushPage() {
     in->ShutDown();
 
     File tempFile;
@@ -97,49 +106,31 @@ void SortedDBFile::flushPage() {
     bool recordPresentInFileTempRecord = false;
 
     while (out->Remove(&outPipeTempRecord)) {
-        bool readOutPipeRecord = false;
+        bool outPipeRecordAvailable = true;
         while (recordPresentInFileTempRecord || (foundRecordInFile = fileTempPage.GetFirst(&fileTempRecord)) == 1 ||
                tempReadCursor < fileLength) {
             if (foundRecordInFile) {
                 if (comp->Compare(&outPipeTempRecord, &fileTempRecord, sortInfo->myOrder) < 1) {
-                    if (tempPage.Append(&outPipeTempRecord) != 1) {
-                        tempFile.AddPage(&tempPage, tempWritePage++);
-                        tempPage.EmptyItOut();
-                        tempPage.Append(&outPipeTempRecord);
-                    }
-                    readOutPipeRecord = true;
+                    tempWritePage = SortedDBFile::AppendRecord(&tempFile, &tempPage, &outPipeTempRecord, tempWritePage);
+                    outPipeRecordAvailable = false;
                     recordPresentInFileTempRecord = true;
                     break;
                 } else {
-                    if (tempPage.Append(&fileTempRecord) != 1) {
-                        tempFile.AddPage(&tempPage, tempWritePage++);
-                        tempPage.EmptyItOut();
-                        tempPage.Append(&fileTempRecord);
-                    }
+                    tempWritePage = SortedDBFile::AppendRecord(&tempFile, &tempPage, &fileTempRecord, tempWritePage);
                     recordPresentInFileTempRecord = false;
-                };
+                }
             } else {
                 file->GetPage(&fileTempPage, tempReadCursor++);
             }
         }
 
-        if (!readOutPipeRecord && tempPage.Append(&outPipeTempRecord) != 1) {
-            tempFile.AddPage(&tempPage, tempWritePage++);
-            tempPage.EmptyItOut();
-            tempPage.Append(&outPipeTempRecord);
-        }
+        if (outPipeRecordAvailable) tempWritePage = SortedDBFile::AppendRecord(&tempFile, &tempPage, &outPipeTempRecord, tempWritePage);
     }
 
     while ((foundRecordInFile = fileTempPage.GetFirst(&fileTempRecord)) == 1 || tempReadCursor < fileLength) {
-        if (foundRecordInFile) {
-            if (tempPage.Append(&fileTempRecord) != 1) {
-                tempFile.AddPage(&tempPage, tempWritePage++);
-                tempPage.EmptyItOut();
-                tempPage.Append(&fileTempRecord);
-            }
-        } else {
-            file->GetPage(&fileTempPage, tempReadCursor++);
-        }
+        if (foundRecordInFile)
+            tempWritePage = SortedDBFile::AppendRecord(&tempFile, &tempPage, &fileTempRecord, tempWritePage);
+        else file->GetPage(&fileTempPage, tempReadCursor++);
     }
 
     tempFile.AddPage(&tempPage, tempWritePage++);
@@ -158,7 +149,7 @@ void SortedDBFile::flushPage() {
     needFlush = false;
 }
 
-void SortedDBFile::writeMetadata(const char *fpath, fType file_type, void *startup) {
+void SortedDBFile::WriteMetadata(const char *fpath, fType file_type, void *startup) {
     SortInfo *startUpSortInfo = (SortInfo *) startup;
     ofstream metadata(fpath + std::string(".metadata"));
     if (metadata.is_open()) {
@@ -179,9 +170,7 @@ void SortedDBFile::writeMetadata(const char *fpath, fType file_type, void *start
     }
 }
 
-void SortedDBFile::readMetadata(const char *fpath) {
-    writePage = file->GetLength() - 1;
-
+void SortedDBFile::ReadMetadata(const char *fpath) {
     OrderMaker *orderMaker = new OrderMaker();
     this->sortInfo = new SortInfo(orderMaker, 0);
     string line;

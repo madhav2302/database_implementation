@@ -17,14 +17,14 @@ int HeapDBFile::Create(const char *fpath, fType file_type, void *startup) {
 }
 
 int HeapDBFile::Close() {
-    this->flushPageIfNeeded();
+    this->FlushPageIfNeeded();
 
     page->EmptyItOut();
     return file->Close();
 }
 
 void HeapDBFile::MoveFirst() {
-    this->flushPageIfNeeded();
+    this->FlushPageIfNeeded();
 
     this->readPage = 0;
     page->EmptyItOut();
@@ -33,7 +33,7 @@ void HeapDBFile::MoveFirst() {
 
 void HeapDBFile::Add(Record &addme) {
     if (page->Append(&addme) == 0) {
-        flushPage();
+        FlushPage();
         page->Append(&addme);
     }
 
@@ -41,7 +41,7 @@ void HeapDBFile::Add(Record &addme) {
 }
 
 int HeapDBFile::GetNext(Record &fetchme) {
-    this->flushPageIfNeeded();
+    this->FlushPageIfNeeded();
 
     if (page->GetFirst(&fetchme) == 1) return 1;
 
@@ -53,7 +53,7 @@ int HeapDBFile::GetNext(Record &fetchme) {
 }
 
 int HeapDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
-    this->flushPageIfNeeded();
+    this->FlushPageIfNeeded();
 
     int foundFilteredValue = 0;
 
@@ -70,7 +70,7 @@ int HeapDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
     return 0;
 }
 
-void HeapDBFile::writeMetadata(const char *fpath, fType file_type, void *startup) {
+void HeapDBFile::WriteMetadata(const char *fpath, fType file_type, void *startup) {
     ofstream metadata(fpath + std::string(".metadata"));
     if (metadata.is_open()) {
         metadata << file_type << '\n';
@@ -82,11 +82,11 @@ void HeapDBFile::writeMetadata(const char *fpath, fType file_type, void *startup
     }
 }
 
-void HeapDBFile::readMetadata(const char *fpath) {
+void HeapDBFile::ReadMetadata(const char *fpath) {
     writePage = file->GetLength() - 1;
 }
 
-void HeapDBFile::flushPage() {
+void HeapDBFile::FlushPage() {
     file->AddPage(page, writePage++);
     page->EmptyItOut();
     needFlush = false;

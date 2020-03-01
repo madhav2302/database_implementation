@@ -28,7 +28,6 @@ void HeapDBFile::MoveFirst() {
 
     this->readPage = 0;
     page->EmptyItOut();
-    file->GetPage(page, readPage++);
 }
 
 void HeapDBFile::Add(Record &addme) {
@@ -51,10 +50,10 @@ int HeapDBFile::GetNext(Record &fetchme) {
 int HeapDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
     this->FlushPageIfNeeded();
 
-    int foundFilteredValue = 0;
+    int recordAvailable = 0;
 
-    while ((foundFilteredValue = page->GetFirst(&fetchme)) == 1 || readPage < writePage) {
-        if (foundFilteredValue == 1) {
+    while ((recordAvailable = page->GetFirst(&fetchme)) == 1 || readPage < writePage) {
+        if (recordAvailable == 1) {
             if (comp->Compare(&fetchme, &literal, &cnf)) return 1;
         } else {
             file->GetPage(page, readPage++);

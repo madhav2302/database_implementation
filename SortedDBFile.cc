@@ -28,7 +28,11 @@ void SortedDBFile::MoveFirst() {
 
     this->readCursor = 0;
     readPage->EmptyItOut();
-    file->GetPage(readPage, readCursor++);
+
+    if (queryInitialized) {
+        queryInitialized = false;
+        delete query;
+    }
 }
 
 void SortedDBFile::Add(Record &addme) {
@@ -57,12 +61,43 @@ int SortedDBFile::GetNext(Record &fetchme) {
 int SortedDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
     this->FlushPageIfNeeded();
 
-    int foundFilteredValue = 0;
+    if (!queryInitialized) {
+        this->query = new OrderMaker();
+        cnf.GetSortOrder(*(sortInfo->myOrder), *query);
 
-    while ((foundFilteredValue = readPage->GetFirst(&fetchme)) == 1 || readCursor < file->GetLength() - 1) {
-        if (foundFilteredValue == 1) {
-            if (comp->Compare(&fetchme, &literal, &cnf)) {
-                return 1;
+        if (query->getNumAtts() > 0) {
+            off_t start = 0;
+            off_t end = file->GetLength() - 2;
+
+            while (start < end) {
+                Page binarySearchPage;
+                off_t mid = (start + end) / 2;
+                file->GetPage(&binarySearchPage, mid);
+                Record binarySearchRecord;
+                binarySearchPage.GetFirst(&binarySearchRecord);
+
+                if (comp->Compare(&literal, query, &binarySearchRecord, sortInfo->myOrder) > 0) start = mid + 1;
+                else end = mid - 1;
+            }
+
+            readCursor = start;
+        } else {
+            readCursor = 0;
+        }
+
+        queryInitialized = true;
+        readPage->EmptyItOut();
+        file->GetPage(readPage, readCursor++);
+    }
+
+    int recordAvailable = 0;
+
+    while ((recordAvailable = readPage->GetFirst(&fetchme)) == 1 || readCursor < file->GetLength() - 1) {
+        if (recordAvailable == 1) {
+            if (comp->Compare(&fetchme, &literal, &cnf)) return 1;
+            if (query->getNumAtts() > 0 && comp->Compare(&literal, query, &fetchme, sortInfo->myOrder) < 0) {
+                readPage->EmptyItOut();
+                readCursor = file->GetLength();
             }
         } else {
             file->GetPage(readPage, readCursor++);
@@ -70,15 +105,6 @@ int SortedDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
     }
 
     return 0;
-}
-
-int SortedDBFile::AppendRecord(File *tempFile, Page *tempPage, Record *addme, off_t writePage) {
-    if (tempPage->Append(addme) != 1) {
-        tempFile->AddPage(tempPage, writePage++);
-        tempPage->EmptyItOut();
-        tempPage->Append(addme);
-    }
-    return writePage;
 }
 
 void SortedDBFile::FlushPage() {
@@ -111,12 +137,12 @@ void SortedDBFile::FlushPage() {
                tempReadCursor < fileLength) {
             if (foundRecordInFile) {
                 if (comp->Compare(&outPipeTempRecord, &fileTempRecord, sortInfo->myOrder) < 1) {
-                    tempWritePage = SortedDBFile::AppendRecord(&tempFile, &tempPage, &outPipeTempRecord, tempWritePage);
+                    SortedDBFile::AppendRecord(tempFile, tempPage, outPipeTempRecord, tempWritePage);
                     outPipeRecordAvailable = false;
                     recordPresentInFileTempRecord = true;
                     break;
                 } else {
-                    tempWritePage = SortedDBFile::AppendRecord(&tempFile, &tempPage, &fileTempRecord, tempWritePage);
+                    SortedDBFile::AppendRecord(tempFile, tempPage, fileTempRecord, tempWritePage);
                     recordPresentInFileTempRecord = false;
                 }
             } else {
@@ -124,12 +150,11 @@ void SortedDBFile::FlushPage() {
             }
         }
 
-        if (outPipeRecordAvailable) tempWritePage = SortedDBFile::AppendRecord(&tempFile, &tempPage, &outPipeTempRecord, tempWritePage);
+        if (outPipeRecordAvailable) SortedDBFile::AppendRecord(tempFile, tempPage, outPipeTempRecord, tempWritePage);
     }
 
     while ((foundRecordInFile = fileTempPage.GetFirst(&fileTempRecord)) == 1 || tempReadCursor < fileLength) {
-        if (foundRecordInFile)
-            tempWritePage = SortedDBFile::AppendRecord(&tempFile, &tempPage, &fileTempRecord, tempWritePage);
+        if (foundRecordInFile) SortedDBFile::AppendRecord(tempFile, tempPage, fileTempRecord, tempWritePage);
         else file->GetPage(&fileTempPage, tempReadCursor++);
     }
 
@@ -197,5 +222,13 @@ void SortedDBFile::ReadMetadata(const char *fpath) {
     } else {
         cout << "Unable to open file for read\n";
         exit(1);
+    }
+}
+
+void SortedDBFile::AppendRecord(File &tempFile, Page &tempPage, Record &addme, off_t &writePage) {
+    if (tempPage.Append(&addme) != 1) {
+        tempFile.AddPage(&tempPage, writePage++);
+        tempPage.EmptyItOut();
+        tempPage.Append(&addme);
     }
 }

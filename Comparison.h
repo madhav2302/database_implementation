@@ -88,6 +88,7 @@ class CNF {
 	int numAnds;
 
 public:
+	void GetSortOrder(OrderMaker &sortOrder, OrderMaker &query);
 
 	// this returns an instance of the OrderMaker class that
 	// allows the CNF to be implemented using a sort-based

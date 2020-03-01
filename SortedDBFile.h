@@ -28,6 +28,10 @@ private:
      */
     off_t readCursor = 0;
 
+    bool queryInitialized = false;
+
+    OrderMaker *query;
+
     SortInfo *sortInfo;
 
     void WriteMetadata(const char *fpath, fType file_type, void *startup) override;
@@ -36,7 +40,7 @@ private:
 
     void FlushPage() override;
 
-    int AppendRecord(File *tempFile, Page *tempPage, Record *addme, off_t writePage);
+    static void AppendRecord(File &tempFile, Page &tempPage, Record &addme, off_t &writePage);
 public:
     SortedDBFile();
 

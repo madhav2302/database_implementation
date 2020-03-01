@@ -41,6 +41,8 @@ private:
     void FlushPage() override;
 
     static void AppendRecord(File &tempFile, Page &tempPage, Record &addme, off_t &writePage);
+
+    int PerformBinarySearch(CNF &cnf, Record &literal);
 public:
     SortedDBFile();
 

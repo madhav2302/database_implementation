@@ -4,25 +4,11 @@
 
 HeapDBFile::HeapDBFile() = default;
 
-HeapDBFile::~HeapDBFile() = default;;
+HeapDBFile::~HeapDBFile() = default;
 
 int HeapDBFile::Create(const char *fpath, fType file_type, void *startup) {
     this->writePage = 0;
     return GenericDBFile::Create(fpath, file_type, startup);
-}
-
-int HeapDBFile::Close() {
-    this->FlushPageIfNeeded();
-
-    page->EmptyItOut();
-    return file->Close();
-}
-
-void HeapDBFile::MoveFirst() {
-    this->FlushPageIfNeeded();
-
-    this->readCursor = 0;
-    page->EmptyItOut();
 }
 
 void HeapDBFile::Add(Record &addme) {

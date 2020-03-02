@@ -41,6 +41,20 @@ void GenericDBFile::Load(Schema &f_schema, const char *loadpath) {
     MoveFirst();
 }
 
+void GenericDBFile::MoveFirst() {
+    this->FlushPageIfNeeded();
+
+    this->readCursor = 0;
+    page->EmptyItOut();
+}
+
+int GenericDBFile::Close() {
+    this->FlushPageIfNeeded();
+
+    page->EmptyItOut();
+    return file->Close();
+}
+
 int GenericDBFile::GetNext(Record &fetchme) {
     this->FlushPageIfNeeded();
 

@@ -12,17 +12,8 @@ int SortedDBFile::Create(const char *fpath, fType file_type, void *startup) {
     return GenericDBFile::Create(fpath, file_type, startup);
 }
 
-int SortedDBFile::Close() {
-    this->FlushPageIfNeeded();
-
-    return file->Close();
-}
-
 void SortedDBFile::MoveFirst() {
-    this->FlushPageIfNeeded();
-
-    this->readCursor = 0;
-    page->EmptyItOut();
+    GenericDBFile::MoveFirst();
 
     if (queryInitialized) {
         queryInitialized = false;

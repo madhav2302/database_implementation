@@ -38,8 +38,6 @@ public:
 
     int Create(const char *fpath, fType file_type, void *startup) override;
 
-    int Close() override;
-
     void MoveFirst() override;
 
     void Add(Record &addme) override;

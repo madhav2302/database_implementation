@@ -71,11 +71,11 @@ public:
 
     int Open(const char *fpath);
 
-    virtual int Close() = 0;
+    int Close();
 
     void Load(Schema &myschema, const char *loadpath);
 
-    virtual void MoveFirst() = 0;
+    virtual void MoveFirst();
 
     virtual void Add(Record &addme) = 0;
 

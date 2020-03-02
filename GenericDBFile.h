@@ -28,9 +28,19 @@ protected:
     File *file;
 
     /**
+     * Page used for reads and writes.
+     */
+    Page *page;
+
+    /**
+     * Current page from which we will read the data.
+     */
+    off_t readCursor = 0;
+
+    /**
      * The comparator engine is used by GetNext method which filters records based on CNF passed to it.
      */
-    ComparisonEngine *comp;
+    ComparisonEngine comp;
 
     /**
      * Used as a flag to determine if page need to be flushed while switching from writes to read.
@@ -69,7 +79,7 @@ public:
 
     virtual void Add(Record &addme) = 0;
 
-    virtual int GetNext(Record &fetchme) = 0;
+    int GetNext(Record &fetchme);
 
     virtual int GetNext(Record &fetchme, CNF &cnf, Record &literal) = 0;
 };

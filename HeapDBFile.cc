@@ -2,14 +2,9 @@
 #include <iostream>
 #include <fstream>
 
-HeapDBFile::HeapDBFile() {
-    page = new Page();
-    cerr << "Create instance of HeapDBFile\n";
-}
+HeapDBFile::HeapDBFile() = default;
 
-HeapDBFile::~HeapDBFile() {
-    delete page;
-};
+HeapDBFile::~HeapDBFile() = default;;
 
 int HeapDBFile::Create(const char *fpath, fType file_type, void *startup) {
     this->writePage = 0;
@@ -26,7 +21,7 @@ int HeapDBFile::Close() {
 void HeapDBFile::MoveFirst() {
     this->FlushPageIfNeeded();
 
-    this->readPage = 0;
+    this->readCursor = 0;
     page->EmptyItOut();
 }
 
@@ -39,24 +34,16 @@ void HeapDBFile::Add(Record &addme) {
     needFlush = true;
 }
 
-int HeapDBFile::GetNext(Record &fetchme) {
-    this->FlushPageIfNeeded();
-
-    if (page->GetFirst(&fetchme) == 1) return 1;
-    if (readPage < writePage) file->GetPage(page, readPage++);
-    return page->GetFirst(&fetchme);
-}
-
 int HeapDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
     this->FlushPageIfNeeded();
 
     int recordAvailable = 0;
 
-    while ((recordAvailable = page->GetFirst(&fetchme)) == 1 || readPage < writePage) {
+    while ((recordAvailable = page->GetFirst(&fetchme)) == 1 || readCursor < writePage) {
         if (recordAvailable == 1) {
-            if (comp->Compare(&fetchme, &literal, &cnf)) return 1;
+            if (comp.Compare(&fetchme, &literal, &cnf)) return 1;
         } else {
-            file->GetPage(page, readPage++);
+            file->GetPage(page, readCursor++);
         }
     }
 

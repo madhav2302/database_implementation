@@ -12,21 +12,9 @@ private:
 
     BigQ *bigQ;
 
-
     Pipe *in;
 
-
     Pipe *out;
-
-    /**
-     * Page used for reads.
-     */
-    Page *readPage;
-
-    /**
-     * Current page from which we will read the data.
-     */
-    off_t readCursor = 0;
 
     bool queryInitialized = false;
 
@@ -55,8 +43,6 @@ public:
     void MoveFirst() override;
 
     void Add(Record &addme) override;
-
-    int GetNext(Record &fetchme) override;
 
     int GetNext(Record &fetchme, CNF &cnf, Record &literal) override;
 };

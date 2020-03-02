@@ -3,14 +3,9 @@
 #include <fstream>
 #include <cstring>
 
-SortedDBFile::SortedDBFile() {
-    readPage = new Page();
-    cerr << "Create instance of SortedDBFile\n";
-}
+SortedDBFile::SortedDBFile() = default;
 
-SortedDBFile::~SortedDBFile() {
-    delete readPage;
-}
+SortedDBFile::~SortedDBFile() = default;
 
 int SortedDBFile::Create(const char *fpath, fType file_type, void *startup) {
     this->sortInfo = (SortInfo *) startup;
@@ -27,7 +22,7 @@ void SortedDBFile::MoveFirst() {
     this->FlushPageIfNeeded();
 
     this->readCursor = 0;
-    readPage->EmptyItOut();
+    page->EmptyItOut();
 
     if (queryInitialized) {
         queryInitialized = false;
@@ -46,18 +41,6 @@ void SortedDBFile::Add(Record &addme) {
     needFlush = true;
 }
 
-int SortedDBFile::GetNext(Record &fetchme) {
-    this->FlushPageIfNeeded();
-
-    if (readPage->GetFirst(&fetchme) == 1) return 1;
-
-    if (readCursor < file->GetLength() - 1) {
-        file->GetPage(readPage, readCursor++);
-    }
-
-    return readPage->GetFirst(&fetchme);
-}
-
 int SortedDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
     this->FlushPageIfNeeded();
 
@@ -66,21 +49,21 @@ int SortedDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
         cnf.GetSortOrder(*(sortInfo->myOrder), *query);
 
         readCursor = query->getNumAtts() > 0 ? PerformBinarySearch(cnf, literal) : 0;
-        readPage->EmptyItOut();
+        page->EmptyItOut();
         queryInitialized = true;
     }
 
     int recordAvailable = 0;
 
-    while ((recordAvailable = readPage->GetFirst(&fetchme)) == 1 || readCursor < file->GetLength() - 1) {
+    while ((recordAvailable = page->GetFirst(&fetchme)) == 1 || readCursor < file->GetLength() - 1) {
         if (recordAvailable == 1) {
-            if (comp->Compare(&fetchme, &literal, &cnf)) return 1;
-            if (query->getNumAtts() > 0 && comp->Compare(&literal, query, &fetchme, sortInfo->myOrder) < 0) {
-                readPage->EmptyItOut();
+            if (comp.Compare(&fetchme, &literal, &cnf)) return 1;
+            if (query->getNumAtts() > 0 && comp.Compare(&literal, query, &fetchme, sortInfo->myOrder) < 0) {
+                page->EmptyItOut();
                 readCursor = file->GetLength();
             }
         } else {
-            file->GetPage(readPage, readCursor++);
+            file->GetPage(page, readCursor++);
         }
     }
 
@@ -116,7 +99,7 @@ void SortedDBFile::FlushPage() {
         while (recordPresentInFileTempRecord || (foundRecordInFile = fileTempPage.GetFirst(&fileTempRecord)) == 1 ||
                tempReadCursor < fileLength) {
             if (foundRecordInFile) {
-                if (comp->Compare(&outPipeTempRecord, &fileTempRecord, sortInfo->myOrder) < 1) {
+                if (comp.Compare(&outPipeTempRecord, &fileTempRecord, sortInfo->myOrder) < 1) {
                     SortedDBFile::AppendRecord(tempFile, tempPage, outPipeTempRecord, tempWritePage);
                     outPipeRecordAvailable = false;
                     recordPresentInFileTempRecord = true;
@@ -226,7 +209,7 @@ int SortedDBFile::PerformBinarySearch(CNF &cnf, Record &literal) {
         file->GetPage(&binarySearchPage, mid);
         binarySearchPage.GetFirst(&binarySearchRecord);
 
-        if (comp->Compare(&literal, query, &binarySearchRecord, sortInfo->myOrder) > 0) start = mid + 1;
+        if (comp.Compare(&literal, query, &binarySearchRecord, sortInfo->myOrder) > 0) start = mid + 1;
         else end = mid - 1;
     }
 

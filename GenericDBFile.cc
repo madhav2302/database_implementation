@@ -3,12 +3,12 @@
 
 GenericDBFile::GenericDBFile() {
     file = new File();
-    comp = new ComparisonEngine();
+    page = new Page();
 }
 
 GenericDBFile::~GenericDBFile() {
+    delete page;
     delete file;
-    delete comp;
 }
 
 int GenericDBFile::Create(const char *fpath, fType file_type, void *startup) {
@@ -39,6 +39,14 @@ void GenericDBFile::Load(Schema &f_schema, const char *loadpath) {
     // Flush the page with rest of the records
     FlushPage();
     MoveFirst();
+}
+
+int GenericDBFile::GetNext(Record &fetchme) {
+    this->FlushPageIfNeeded();
+
+    if (page->GetFirst(&fetchme) == 1) return 1;
+    if (readCursor < file->GetLength() - 1) file->GetPage(page, readCursor++);
+    return page->GetFirst(&fetchme);
 }
 
 void GenericDBFile::FlushPageIfNeeded() {

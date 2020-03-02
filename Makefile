@@ -14,11 +14,18 @@ endif
 main: $(CLASSES) main.o
 	$(CC) -o main $(CLASSES) main.o $(test_out_tag) -lpthread -lgtest
 
+##### GTests #####
+
 HeapFileGTests.out: $(CLASSES) HeapFileGTests.o
 	$(CC) -o HeapFileGTests.out $(CLASSES) HeapFileGTests.o $(test_out_tag) -lpthread -lgtest
 
-BigQTests.out: $(CLASSES) BigQTests.o
-	$(CC) -o BigQTests.out $(CLASSES) BigQTests.o $(test_out_tag) -lpthread -lgtest
+BigQGTests.out: $(CLASSES) BigQGTests.o
+	$(CC) -o BigQGTests.out $(CLASSES) BigQGTests.o $(test_out_tag) -lpthread -lgtest
+
+SortedDBFileGTests.out : $(CLASSES) SortedDBFileGTests.o
+	$(CC) -o SortedDBFileGTests.out $(CLASSES) SortedDBFileGTests.o $(test_out_tag) -lpthread -lgtest
+
+##### Assignment Tests ####
 
 test.out: $(CLASSES) test.o
 	$(CC) -o test.out $(CLASSES) test.o $(test_out_tag) -lpthread
@@ -32,8 +39,8 @@ a1test.out: $(CLASSES) a1-test.o
 HeapFileGTests.o: HeapFileGTests.cc
 	$(CC) -g -c HeapFileGTests.cc
 
-BigQTests.o: BigQTests.cc
-	$(CC) -g -c BigQTests.cc
+BigQGTests.o: BigQGTests.cc
+	$(CC) -g -c BigQGTests.cc
 
 test.o: test.cc
 	$(CC) -g -c test.cc

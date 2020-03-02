@@ -32,6 +32,10 @@ configure_file(catalog ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
 add_executable(database_implementation_a1_test a1-test.cc
         a1-test.h
+        BigQ.cc
+        BigQ.h
+        Pipe.cc
+        Pipe.h
         Comparison.cc
         Comparison.h
         ComparisonEngine.cc

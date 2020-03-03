@@ -35,6 +35,7 @@ void SortedDBFile::Add(Record &addme) {
 int SortedDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
     this->FlushPageIfNeeded();
 
+    // Find common attributes b/w cnf and myOrder and perform binary search to find readCursor
     if (!queryInitialized) {
         query = new OrderMaker();
         cnf.GetSortOrder(*(sortInfo->myOrder), *query);
@@ -46,9 +47,11 @@ int SortedDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
 
     int recordAvailable = 0;
 
+    // Fetch record depending on the query
     while ((recordAvailable = page->GetFirst(&fetchme)) == 1 || readCursor < file->GetLength() - 1) {
         if (recordAvailable == 1) {
             if (comp.Compare(&fetchme, &literal, &cnf)) return 1;
+            // We don't need to scan records if we have some common query and record in file is greater than the query
             if (query->getNumAtts() > 0 && comp.Compare(&literal, query, &fetchme, sortInfo->myOrder) < 0) {
                 page->EmptyItOut();
                 readCursor = file->GetLength();
@@ -77,7 +80,7 @@ void SortedDBFile::FlushPage() {
     // Used for reading record from output pipe
     Record outPipeTempRecord;
 
-    // Used for managing
+    // Used for managing existing file
     int foundRecordInFile = 0;
     Page fileTempPage;
     Record fileTempRecord;
@@ -104,9 +107,11 @@ void SortedDBFile::FlushPage() {
             }
         }
 
+        // This will add out pipe record if there are no records remaining in the existing file
         if (outPipeRecordAvailable) SortedDBFile::AppendRecord(tempFile, tempPage, outPipeTempRecord, tempWritePage);
     }
 
+    // Add remaining records from the file
     while ((foundRecordInFile = fileTempPage.GetFirst(&fileTempRecord)) == 1 || tempReadCursor < fileLength) {
         if (foundRecordInFile) SortedDBFile::AppendRecord(tempFile, tempPage, fileTempRecord, tempWritePage);
         else file->GetPage(&fileTempPage, tempReadCursor++);
@@ -115,6 +120,7 @@ void SortedDBFile::FlushPage() {
     tempFile.AddPage(&tempPage, tempWritePage++);
     tempPage.EmptyItOut();
 
+    // Move records to DBFile
     for (int pageNumber = 0; pageNumber < tempFile.GetLength() - 1; pageNumber++) {
         tempFile.GetPage(&tempPage, pageNumber);
         file->AddPage(&tempPage, pageNumber);

@@ -13,10 +13,19 @@
 class DBFile {
 
 private:
+    /**
+     * Instance of HeapDBFile or SortedDBFile depending on the file type passed with the file name
+     */
     GenericDBFile *myInternalFile;
 
+    /**
+     * Reads file type saved in metadata file when opening file
+     */
     static fType readFileType(const char *fpath);
 
+    /**
+     * Initialises myInternalFile variable depending on the file type
+     */
     void initInternalFile(fType f_type);
 public:
     DBFile();

@@ -195,16 +195,16 @@ int main(int argc, char *argv[]) {
     setup();
 
     relation *rel_ptr[] = {n, r, c, p, ps, s, o, li};
-    void (*test_ptr[])() = {&test1, &test2, &test3, &test4};
+    void (*test_ptr[])() = {&test1, &test2, &test3};
     void (*test)();
 
     int tindx = 0;
-    while (tindx < 1 || tindx > 4) {
+    while (tindx < 1 || tindx > 3) {
         cout << " select test option: \n";
         cout << " \t 1. create sorted dbfile\n";
         cout << " \t 2. scan a dbfile\n";
         cout << " \t 3. run some query \n ";
-        cout << " \t 4. Load data as sorted file \n \t ";
+//        cout << " \t 4. Load data as sorted file \n \t ";
         cin >> tindx;
     }
 

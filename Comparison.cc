@@ -117,6 +117,53 @@ void OrderMaker :: Print () {
 	}
 }
 
+int OrderMaker::getNumAtts() {
+    return numAtts;
+}
+
+void OrderMaker::setNumAtts(int numAtts) {
+    this->numAtts = numAtts;
+}
+
+int OrderMaker::getWhichAtts(int index)  {
+    return whichAtts[index];
+}
+void OrderMaker::setWhichAtts(int index, int value) {
+    whichAtts[index] = value;
+}
+Type OrderMaker::getWhichTypes(int index) {
+    return whichTypes[index];
+}
+void OrderMaker::setWhichTypes(int index, Type type) {
+    whichTypes[index] = type;
+}
+
+void CNF::GetSortOrder(OrderMaker &sortOrder, OrderMaker &query) {
+    query.numAtts = 0;
+    for (int index = 0; index < sortOrder.numAtts; index++) {
+        bool foundAtt = false;
+        for (int i = 0; i < numAnds; i++) {
+            if (orLens[i] != 1) continue;
+            if (orList[i][0].op != Equals) continue;
+
+            if (orList[i][0].operand1 != Literal && sortOrder.whichAtts[index] == orList[i][0].whichAtt1) {
+                query.whichAtts[query.numAtts] = orList[i][0].whichAtt2;
+                query.whichTypes[query.numAtts] = sortOrder.whichTypes[index];
+
+                query.numAtts++;
+                foundAtt = true;
+            } else if (orList[i][0].operand2 != Literal && sortOrder.whichAtts[index] == orList[i][0].whichAtt2) {
+                query.whichAtts[query.numAtts] = orList[i][0].whichAtt1;
+                query.whichTypes[query.numAtts] = sortOrder.whichTypes[index];
+
+                query.numAtts++;
+                foundAtt = true;
+            }
+        }
+
+        if (!foundAtt) break;
+    }
+}
 
 
 int CNF :: GetSortOrders (OrderMaker &left, OrderMaker &right) {

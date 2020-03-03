@@ -55,9 +55,9 @@ int main() {
 
 void readDataFromFile() {
     Record temp;
-    Schema mySchema("catalog", "nation");
+    Schema mySchema("catalog", "lineitem");
     File file;
-    file.Open(1, "tmp1581932790.bin");
+    file.Open(1, "lineitem.bin");
 
     cout << "File length is : " << file.GetLength() << '\n';
     Page page;
@@ -72,6 +72,8 @@ void readDataFromFile() {
             temp.Print(&mySchema);
         }
     }
+
+    cout << "Number of records : " << total;
 
     file.Close();
 }

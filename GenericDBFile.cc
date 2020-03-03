@@ -2,21 +2,24 @@
 #include "GenericDBFile.h"
 
 GenericDBFile::GenericDBFile() {
-    page = new Page();
     file = new File();
-    comp = new ComparisonEngine();
+    page = new Page();
 }
 
 GenericDBFile::~GenericDBFile() {
     delete page;
     delete file;
-    delete comp;
 }
 
-int GenericDBFile::Create(const char *f_path, fType f_type, void *startup) {
-    this->fileType = f_type;
-    this->file->Open(0, (char *) f_path);
-    this->writePage = 0;
+int GenericDBFile::Create(const char *fpath, fType file_type, void *startup) {
+    this->WriteMetadata(fpath, file_type, startup);
+    this->file->Open(0, (char *) fpath);
+    return 1;
+}
+
+int GenericDBFile::Open(const char *f_path) {
+    file->Open(1, (char *) f_path);
+    ReadMetadata(f_path);
     return 1;
 }
 
@@ -34,80 +37,36 @@ void GenericDBFile::Load(Schema &f_schema, const char *loadpath) {
     }
 
     // Flush the page with rest of the records
-    flushPage();
-}
-
-int GenericDBFile::Open(const char *f_path) {
-    file->Open(1, (char *) f_path);
-    writePage = file->GetLength() - 1;
-
-    return 1;
+    FlushPage();
+    MoveFirst();
 }
 
 void GenericDBFile::MoveFirst() {
-    this->flushPageIfNeeded();
+    this->FlushPageIfNeeded();
 
-    this->readPage = 0;
+    this->readCursor = 0;
     page->EmptyItOut();
-    file->GetPage(page, readPage++);
 }
 
 int GenericDBFile::Close() {
-    this->flushPageIfNeeded();
+    this->FlushPageIfNeeded();
 
     page->EmptyItOut();
     return file->Close();
 }
 
-void GenericDBFile::Add(Record &rec) {
-    if (page->Append(&rec) == 0) {
-        flushPage();
-        page->Append(&rec);
-    }
-
-    needFlush = true;
-}
-
 int GenericDBFile::GetNext(Record &fetchme) {
-    this->flushPageIfNeeded();
+    this->FlushPageIfNeeded();
 
     if (page->GetFirst(&fetchme) == 1) return 1;
-
-    if (readPage < writePage) {
-        file->GetPage(page, readPage++);
-    }
-
+    if (readCursor < file->GetLength() - 1) file->GetPage(page, readCursor++);
     return page->GetFirst(&fetchme);
 }
 
+void GenericDBFile::FlushPageIfNeeded() {
+    if (!needFlush) return;
 
-int GenericDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
-    this->flushPageIfNeeded();
-
-    int foundFilteredValue = 0;
-
-    while ((foundFilteredValue = page->GetFirst(&fetchme)) == 1 || readPage < writePage) {
-        if (foundFilteredValue == 1) {
-            if (comp->Compare(&fetchme, &literal, &cnf)) {
-                return 1;
-            }
-        } else {
-            file->GetPage(page, readPage++);
-        }
-    }
-
-    return 0;
-}
-
-void GenericDBFile::flushPageIfNeeded() {
-    if (needFlush) {
-        cout << "Flushing while switching from writes to read\n";
-        flushPage();
-    }
-}
-
-void GenericDBFile::flushPage() {
-    file->AddPage(page, this->writePage++);
-    page->EmptyItOut();
-    needFlush = false;
+    cout << "Flushing while switching from writes to read\n";
+    FlushPage();
+    MoveFirst();
 }

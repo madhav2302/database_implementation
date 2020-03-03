@@ -8,6 +8,10 @@ void test2();
 
 void test3();
 
+void test4();
+
+void testOrder(OrderMaker *orderMaker);
+
 int add_data(FILE *src, int numrecs, int &res) {
     DBFile dbfile;
     dbfile.Open(rel->path());
@@ -15,16 +19,74 @@ int add_data(FILE *src, int numrecs, int &res) {
 
     int proc = 0;
     int xx = 20000;
-    while ((res = temp.SuckNextRecord(rel->schema(), src)) && ++proc < numrecs) {
+    while (++proc < numrecs && (res = temp.SuckNextRecord(rel->schema(), src))) {
         dbfile.Add(temp);
         if (proc == xx) cerr << "\t ";
         if (proc % xx == 0) cerr << ".";
     }
 
+    if (proc < numrecs) proc --;
+
     dbfile.Close();
     return proc;
 }
 
+void test4() {
+    OrderMaker o;
+    rel->get_sort_order(o);
+
+    int runlen = 1000;
+
+    struct {
+        OrderMaker *o;
+        int l;
+    } startup = {&o, runlen};
+
+    DBFile dbfile;
+    dbfile.Create(rel->path(), sorted, &startup);
+
+    char tbl_path[100]; // construct path of the tpch flat text file
+    sprintf(tbl_path, "%s%s.tbl", tpch_dir, rel->name());
+    cout << " tpch file will be loaded from " << tbl_path << endl;
+    dbfile.Load(*(rel->schema()), tbl_path);
+    dbfile.Close();
+
+    testOrder(&o);
+}
+
+void testOrder(OrderMaker *orderMaker) {
+    DBFile dbfile;
+    dbfile.Open(rel->path());
+    dbfile.MoveFirst();
+
+
+    ComparisonEngine ceng;
+
+    int err = 0;
+    int i = 0;
+
+    Record rec[2];
+    Record *last = NULL, *prev = NULL;
+
+    while (dbfile.GetNext(rec[i%2])) {
+        prev = last;
+        last = &rec[i%2];
+
+        if (prev && last) {
+            if (ceng.Compare (prev, last, orderMaker) == 1) {
+                err++;
+            }
+        }
+        i++;
+    }
+
+    cerr << " consumer: " << (i - err) << " recs out of " << i << " recs in sorted order \n";
+    if (err) {
+        cerr << " consumer: " <<  err << " recs failed sorted order test \n" << endl;
+    }
+
+    dbfile.Close();
+}
 
 // create a dbfile interactively
 void test1() {
@@ -77,6 +139,8 @@ void test1() {
     }
     cout << "\n create finished.. " << tot << " recs inserted\n";
     fclose(tblfile);
+
+    testOrder(&o);
 }
 
 // sequential scan of a DBfile 
@@ -139,7 +203,8 @@ int main(int argc, char *argv[]) {
         cout << " select test option: \n";
         cout << " \t 1. create sorted dbfile\n";
         cout << " \t 2. scan a dbfile\n";
-        cout << " \t 3. run some query \n \t ";
+        cout << " \t 3. run some query \n ";
+//        cout << " \t 4. Load data as sorted file \n \t ";
         cin >> tindx;
     }
 

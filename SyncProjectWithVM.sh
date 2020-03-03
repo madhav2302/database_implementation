@@ -15,7 +15,7 @@ rsync ${PARAM} \
   --exclude='.idea' \
   --exclude='*.bin' \
   --exclude='*.o' \
-  --exclude='*.bin.bigq' \
+  --exclude='*.bin.*' \
   --exclude='*.out' \
   --exclude='lex.yy.c' \
   --exclude='y.tab.*' \

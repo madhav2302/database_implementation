@@ -1,10 +1,11 @@
 #ifndef TEST_H
 #define TEST_H
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
-#include <math.h>
+#include <cmath>
+#include <fstream>
 
 #include "Pipe.h"
 #include "DBFile.h"
@@ -14,10 +15,17 @@ using namespace std;
 
 // make sure that the information below is correct
 
+bool fileExists() {
+    std::string fileName = "/cise/homes/msodhani/server.ignore";
+    ifstream f(fileName.c_str());
+    return f.good();
+}
+
+
 char *catalog_path = "catalog";
 char *dbfile_dir = "";
-char *tpch_dir = "/cise/tmp/dbi_sp11/DATA/1G/";
-
+const char *tpch_dir = (fileExists() ? "/cise/homes/msodhani/tpch-dbgen/"
+                                     : "/Users/madhavsodhani/projects/cpp/mock_data/");
 
 extern "C" {
 int yyparse(void);   // defined in y.tab.c
@@ -113,7 +121,14 @@ void setup() {
 }
 
 void cleanup() {
-    delete s, p, ps, n, li, r, o, c;
+    delete s;
+    delete p;
+    delete ps;
+    delete n;
+    delete li;
+    delete r;
+    delete o;
+    delete c;
 }
 
 #endif

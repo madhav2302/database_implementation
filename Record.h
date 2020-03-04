@@ -68,6 +68,10 @@ public:
 	// prints the contents of the record; this requires
 	// that the schema also be given so that the record can be interpreted
 	void Print (Schema *mySchema);
+
+	// Write the record into file provided based on schema provided
+	// TextFile doesn't contain column names provided in schema
+	void WriteToFile(Schema *mySchema, FILE *textFile);
 };
 
 #endif

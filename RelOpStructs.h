@@ -77,5 +77,38 @@ struct RelOpSumData {
 
 void *SumFunction(void *data);
 
+struct RelOpDuplicateRemovalData {
+    RelOpDuplicateRemovalData(Pipe &inPipe, Pipe &outPipe, Schema &mySchema, int runLen) : inPipe(inPipe),
+                                                                                           outPipe(outPipe),
+                                                                                           mySchema(mySchema),
+                                                                                           runLen(runLen) {
+        this->inPipe = inPipe;
+        this->outPipe = outPipe;
+        this->mySchema = mySchema;
+    }
 
+    Pipe &inPipe;
+    Pipe &outPipe;
+    Schema &mySchema;
+    int runLen;
+};
+
+void *DuplicateRemoveFunction(void *data);
+
+
+struct RelOpWriteOutData {
+    RelOpWriteOutData(Pipe &inPipe, FILE *outFile, Schema &mySchema) : inPipe(inPipe),
+                                                                       outFile(outFile),
+                                                                       mySchema(mySchema) {
+        this->inPipe = inPipe;
+        this->outFile = outFile;
+        this->mySchema = mySchema;
+    }
+
+    Pipe &inPipe;
+    FILE *outFile;
+    Schema &mySchema;
+};
+
+void *WriteOutFunction(void *data);
 #endif //DATABASE_IMPLEMENTATION_RELOPSTRUCTS_H

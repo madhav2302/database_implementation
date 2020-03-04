@@ -20,15 +20,13 @@ class SelectFile : public RelationalOp {
 
 private:
     pthread_t thread;
-    // Record *buffer;
-
 public:
 
     void Run(DBFile &inFile, Pipe &outPipe, CNF &selOp, Record &literal);
 
     void WaitUntilDone();
 
-    void Use_n_Pages(int n);
+    void Use_n_Pages(int n) {};
 
 };
 
@@ -40,7 +38,7 @@ public:
 
     void WaitUntilDone();
 
-    void Use_n_Pages(int n);
+    void Use_n_Pages(int n) {};
 };
 
 class Project : public RelationalOp {
@@ -51,7 +49,7 @@ public:
 
     void WaitUntilDone();
 
-    void Use_n_Pages(int n);
+    void Use_n_Pages(int n) {};
 };
 
 class Join : public RelationalOp {
@@ -64,12 +62,16 @@ public:
 };
 
 class DuplicateRemoval : public RelationalOp {
+private:
+    pthread_t thread;
+    int runLen;
+
 public:
-    void Run(Pipe &inPipe, Pipe &outPipe, Schema &mySchema) {}
+    void Run(Pipe &inPipe, Pipe &outPipe, Schema &mySchema);
 
-    void WaitUntilDone() {}
+    void WaitUntilDone();
 
-    void Use_n_Pages(int n) {}
+    void Use_n_Pages(int n);
 };
 
 class Sum : public RelationalOp {
@@ -80,7 +82,7 @@ public:
 
     void WaitUntilDone();
 
-    void Use_n_Pages(int n);
+    void Use_n_Pages(int n) {};
 };
 
 class GroupBy : public RelationalOp {
@@ -93,10 +95,13 @@ public:
 };
 
 class WriteOut : public RelationalOp {
-public:
-    void Run(Pipe &inPipe, FILE *outFile, Schema &mySchema) {}
+private:
+    pthread_t thread;
 
-    void WaitUntilDone() {}
+public:
+    void Run(Pipe &inPipe, FILE *outFile, Schema &mySchema);
+
+    void WaitUntilDone();
 
     void Use_n_Pages(int n) {}
 };

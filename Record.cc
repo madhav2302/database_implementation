@@ -468,5 +468,28 @@ void Record :: Print (Schema *mySchema) {
 	cout << "\n";
 }
 
+void Record::WriteToFile(Schema *mySchema, FILE *textFile) {
+    int n = mySchema->GetNumAtts();
+    Attribute *atts = mySchema->GetAtts();
+
+    for (int i = 0; i < n; i++) {
+
+        int pointer = ((int *) bits)[i + 1];
+
+        if (atts[i].myType == Int) {
+            int *myInt = (int *) &(bits[pointer]);
+            fprintf(textFile, "%d|", *myInt);
+        } else if (atts[i].myType == Double) {
+            double *myDouble = (double *) &(bits[pointer]);
+            fprintf(textFile, "%f|", *myDouble);
+        } else if (atts[i].myType == String) {
+            char *myString = (char *) &(bits[pointer]);
+            fprintf(textFile, "%c|", *myString);
+        }
+    }
+
+    fprintf(textFile, "\n");
+}
+
 
 

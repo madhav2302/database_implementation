@@ -1,6 +1,7 @@
 #include "RelOp.h"
 #include "RelOpStructs.h"
 #include <iostream>
+#include "BigQ.h"
 
 void SelectFile::Run(DBFile &inFile, Pipe &outPipe, CNF &selOp, Record &literal) {
     RelOpSelectFileData *data = new RelOpSelectFileData(inFile, outPipe, selOp, literal);
@@ -9,10 +10,7 @@ void SelectFile::Run(DBFile &inFile, Pipe &outPipe, CNF &selOp, Record &literal)
 
 void SelectFile::WaitUntilDone() {
     pthread_join(thread, NULL);
-}
-
-void SelectFile::Use_n_Pages(int runlen) {
-
+    cerr << "Select File Completed\n";
 }
 
 void *SelectFileFunction(void *data) {
@@ -33,10 +31,7 @@ void SelectPipe::Run(Pipe &inPipe, Pipe &outPipe, CNF &selOp, Record &literal) {
 
 void SelectPipe::WaitUntilDone() {
     pthread_join(thread, NULL);
-}
-
-void SelectPipe::Use_n_Pages(int runlen) {
-
+    cerr << "Select Pipe Completed\n";
 }
 
 void *SelectPipeFunction(void *data) {
@@ -58,10 +53,7 @@ void Project::Run(Pipe &inPipe, Pipe &outPipe, int *keepMe, int numAttsInput, in
 
 void Project::WaitUntilDone() {
     pthread_join(thread, NULL);
-}
-
-void Project::Use_n_Pages(int n) {
-
+    cerr << "Project Completed\n";
 }
 
 void *ProjectFunction(void *data) {
@@ -88,10 +80,7 @@ void Sum::Run(Pipe &inPipe, Pipe &outPipe, Function &computeMe) {
 
 void Sum::WaitUntilDone() {
     pthread_join(thread, NULL);
-}
-
-void Sum::Use_n_Pages(int n) {
-
+    cerr << "Sum Completed\n";
 }
 
 void *SumFunction(void *data) {
@@ -134,3 +123,76 @@ void *SumFunction(void *data) {
 
     threadData->outPipe.ShutDown();
 }
+
+void DuplicateRemoval::Run(Pipe &inPipe, Pipe &outPipe, Schema &mySchema) {
+    RelOpDuplicateRemovalData *data = new RelOpDuplicateRemovalData(inPipe, outPipe, mySchema, runLen);
+    pthread_create(&thread, NULL, DuplicateRemoveFunction, (void *) data);
+}
+
+void DuplicateRemoval::WaitUntilDone() {
+    pthread_join(thread, NULL);
+    cerr << "Duplicate Removal Completed\n";
+}
+
+void DuplicateRemoval::Use_n_Pages(int n) {
+    this->runLen = n;
+}
+
+void *DuplicateRemoveFunction(void *d) {
+    ComparisonEngine comp;
+    RelOpDuplicateRemovalData *data = (RelOpDuplicateRemovalData *) d;
+
+    OrderMaker sortOrder;
+    sortOrder.numAtts = data->mySchema.GetNumAtts();
+
+    for (int i = 0; i < sortOrder.numAtts; i++) {
+        sortOrder.whichAtts[i] = i;
+        sortOrder.whichTypes[i] = (data->mySchema.GetAtts() + i)->myType;
+    }
+
+    Pipe tempPipe(100);
+    BigQ bigQ(data->inPipe, tempPipe, sortOrder, data->runLen);
+
+    Record temp1;
+    Record temp2;
+
+    int recordFound = tempPipe.Remove(&temp1);
+
+    if (recordFound) {
+        while (tempPipe.Remove(&temp2)) {
+            if (comp.Compare(&temp1, &temp2, &sortOrder) != 0) {
+                data->outPipe.Insert(&temp1);
+                temp1.Consume(&temp2);
+            }
+        }
+    }
+
+    data->outPipe.Insert(&temp1);
+    data->outPipe.ShutDown();
+}
+
+void WriteOut::Run(Pipe &inPipe, FILE *outFile, Schema &mySchema) {
+    RelOpWriteOutData *data = new RelOpWriteOutData(inPipe, outFile, mySchema);
+    pthread_create(&thread, NULL, WriteOutFunction, (void *) data);
+}
+
+void WriteOut::WaitUntilDone() {
+    pthread_join(thread, NULL);
+    cerr << "WriteOut Completed\n";
+}
+
+void *WriteOutFunction(void *d) {
+    RelOpWriteOutData *data = (RelOpWriteOutData *) d;
+
+    int count = 0;
+    Record temp;
+
+    while (data->inPipe.Remove(&temp)) {
+        temp.WriteToFile(&data->mySchema, data->outFile);
+        count++;
+    }
+
+    cout << "Number of records : " << count << '\n';
+    fclose(data->outFile);
+}
+

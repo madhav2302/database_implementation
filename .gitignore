@@ -8,6 +8,6 @@
 /y.tab.*
 /yyfunc.tab.*
 /lex.yy.*
-/lex.yyfunc*
+/lex.yyfunc.*
 /main
 /MakeEverything.sh

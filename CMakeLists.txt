@@ -9,6 +9,7 @@ include_directories(.)
 configure_file(catalog ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
 add_executable(database_implementation main.cc
+        BigQ.h BigQ.cc
         Comparison.cc Comparison.h ComparisonEngine.cc ComparisonEngine.h
         DBFile.cc DBFile.h GenericDBFile.cc GenericDBFile.h Defs.h
         File.cc File.h Record.cc Record.h Schema.cc Schema.h
@@ -18,6 +19,7 @@ add_executable(database_implementation main.cc
         )
 
 add_executable(database_implementation_a1_test a1-test.cc a1-test.h
+        BigQ.h BigQ.cc
         Comparison.cc Comparison.h ComparisonEngine.cc ComparisonEngine.h
         DBFile.cc DBFile.h GenericDBFile.cc GenericDBFile.h Defs.h
         File.cc File.h Record.cc Record.h Schema.cc Schema.h
@@ -27,6 +29,7 @@ add_executable(database_implementation_a1_test a1-test.cc a1-test.h
         )
 
 add_executable(database_implementation_a2_p1_test a2-test.cc a2-test.h
+        BigQ.h BigQ.cc
         Comparison.cc Comparison.h ComparisonEngine.cc ComparisonEngine.h
         DBFile.cc DBFile.h GenericDBFile.cc GenericDBFile.h Defs.h
         File.cc File.h Record.cc Record.h Schema.cc Schema.h
@@ -36,6 +39,7 @@ add_executable(database_implementation_a2_p1_test a2-test.cc a2-test.h
         )
 
 add_executable(database_implementation_a2_p2_test a2-2test.cc a2-2test.h
+        BigQ.h BigQ.cc
         Comparison.cc Comparison.h ComparisonEngine.cc ComparisonEngine.h
         DBFile.cc DBFile.h GenericDBFile.cc GenericDBFile.h Defs.h
         File.cc File.h Record.cc Record.h Schema.cc Schema.h
@@ -45,6 +49,7 @@ add_executable(database_implementation_a2_p2_test a2-2test.cc a2-2test.h
         )
 
 add_executable(database_implementation_a3_test test.cc test.h
+        BigQ.h BigQ.cc
         Comparison.cc Comparison.h ComparisonEngine.cc ComparisonEngine.h
         DBFile.cc DBFile.h GenericDBFile.cc GenericDBFile.h Defs.h
         File.cc File.h Record.cc Record.h Schema.cc Schema.h

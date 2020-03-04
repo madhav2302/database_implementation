@@ -127,4 +127,4 @@ clean:
 	rm -f lex.yyfunc*
 	rm -f main
 	rm -f *tmp*.bin
-	rm -f *.bin*
+	#rm -f *.bin*

@@ -30,6 +30,9 @@ remove("nation.bin");
 remove("nation.bin.metadata");
 
 OrderMaker o;
+o.numAtts = 1;
+o.whichAtts[0] = 0;
+o.whichTypes[0] = Int;
 
 int runLen = 10;
 SortInfo sortInfo(&o, runLen);
@@ -55,7 +58,14 @@ if (metadata_read.is_open()) {
 
     getline(metadata_read, line);
     int numAtts = std::stoi(line);
-    EXPECT_EQ(numAtts, 0);
+    EXPECT_EQ(numAtts, 1);
+
+    getline(metadata_read, line);
+    EXPECT_EQ(std::stoi(line), 0);
+
+    getline(metadata_read, line);
+    Type dataType = (Type) std::stoi(line);
+    EXPECT_EQ(dataType, Int);
 
     metadata_read.close();
 }

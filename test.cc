@@ -90,7 +90,7 @@ void init_SF_c (char *pred_str, int numpgs) {
 	SF_c.Use_n_Pages (numpgs);
 }
 
-// select * from partsupp where ps_supplycost <1.03 
+// select * from partsupp where ps_supplycost <1.03
 // expected output: 31 records
 void q1 () {
 
@@ -127,9 +127,9 @@ void q2 () {
 	SF_p.WaitUntilDone ();
 	P_p.WaitUntilDone ();
 
-	Attribute att3[] = {IA, SA, DA};
+	Attribute att3[] = {IA, SA, SA};
 	Schema out_sch ("out_sch", numAttsOut, att3);
-	int cnt = clear_pipe (_p, p->schema (), true);
+	int cnt = clear_pipe (_out, &out_sch, true);
 
 	cout << "\n\n query2 returned " << cnt << " records \n";
 
@@ -232,7 +232,7 @@ void q5 () {
 		// inpipe = __ps
 		Pipe ___ps (pipesz);
 		Schema __ps_sch ("__ps", 1, &IA);
-		
+
 	WriteOut W;
 		// inpipe = ___ps
 		char *fwpath = "ps.w.tmp";
@@ -298,10 +298,10 @@ void q6 () {
 
 	Schema sum_sch ("sum_sch", 1, &DA);
 	int cnt = clear_pipe (_out, &sum_sch, true);
-	cout << " query6 returned sum for " << cnt << " groups (expected 25 groups)\n"; 
+	cout << " query6 returned sum for " << cnt << " groups (expected 25 groups)\n";
 }
 
-void q7 () { 
+void q7 () {
 /*
 select sum(ps_supplycost)
 from part, supplier, partsupp
@@ -337,7 +337,7 @@ W: write out records from in_pipe to a file using out_schema
 	cout << " TBA\n";
 }
 
-void q8 () { 
+void q8 () {
 /*
 select l_orderkey, l_partkey, l_suppkey
 from lineitem
@@ -364,7 +364,7 @@ int main (int argc, char *argv[]) {
 		exit (0);
 	}
 
-	void (*query_ptr[]) () = {&q1, &q2, &q3, &q4, &q5, &q6, &q7, &q8};  
+	void (*query_ptr[]) () = {&q1, &q2, &q3, &q4, &q5, &q6, &q7, &q8};
 	void (*query) ();
 	int qindx = atoi (argv[1]);
 

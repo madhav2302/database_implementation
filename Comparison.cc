@@ -117,27 +117,6 @@ void OrderMaker :: Print () {
 	}
 }
 
-int OrderMaker::getNumAtts() {
-    return numAtts;
-}
-
-void OrderMaker::setNumAtts(int numAtts) {
-    this->numAtts = numAtts;
-}
-
-int OrderMaker::getWhichAtts(int index)  {
-    return whichAtts[index];
-}
-void OrderMaker::setWhichAtts(int index, int value) {
-    whichAtts[index] = value;
-}
-Type OrderMaker::getWhichTypes(int index) {
-    return whichTypes[index];
-}
-void OrderMaker::setWhichTypes(int index, Type type) {
-    whichTypes[index] = type;
-}
-
 void CNF::GetSortOrder(OrderMaker &sortOrder, OrderMaker &query) {
     query.numAtts = 0;
     for (int index = 0; index < sortOrder.numAtts; index++) {

@@ -5,9 +5,9 @@
 /*.out
 /*.bin
 /*.bin.*
-/y.tab.c
-/y.tab.c-e
-/lex.yy.c
-/y.tab.h
+/y.tab.*
+/yyfunc.tab.*
+/lex.yy.*
+/lex.yyfunc.*
 /main
 /MakeEverything.sh

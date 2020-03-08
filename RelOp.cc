@@ -2,15 +2,11 @@
 #include "RelOpStructs.h"
 #include <iostream>
 #include "BigQ.h"
+#include "SortedDBFile.h"
 
 void SelectFile::Run(DBFile &inFile, Pipe &outPipe, CNF &selOp, Record &literal) {
     RelOpSelectFileData *data = new RelOpSelectFileData(inFile, outPipe, selOp, literal);
-    pthread_create(&thread, NULL, SelectFileFunction, (void *) data);
-}
-
-void SelectFile::WaitUntilDone() {
-    pthread_join(thread, NULL);
-    cerr << "Select File Completed\n";
+    pthread_create(&thread, nullptr, SelectFileFunction, (void *) data);
 }
 
 void *SelectFileFunction(void *data) {
@@ -21,17 +17,12 @@ void *SelectFileFunction(void *data) {
         threadData->outPipe.Insert(&temp);
     }
     threadData->outPipe.ShutDown();
-//    return nullptr;
+    return nullptr;
 }
 
 void SelectPipe::Run(Pipe &inPipe, Pipe &outPipe, CNF &selOp, Record &literal) {
     RelOpSelectPipeData *data = new RelOpSelectPipeData(inPipe, outPipe, selOp, literal);
-    pthread_create(&thread, NULL, SelectPipeFunction, (void *) data);
-}
-
-void SelectPipe::WaitUntilDone() {
-    pthread_join(thread, NULL);
-    cerr << "Select Pipe Completed\n";
+    pthread_create(&thread, nullptr, SelectPipeFunction, (void *) data);
 }
 
 void *SelectPipeFunction(void *data) {
@@ -43,17 +34,12 @@ void *SelectPipeFunction(void *data) {
             threadData->outPipe.Insert(&temp);
     }
     threadData->outPipe.ShutDown();
-//    return nullptr;
+    return nullptr;
 }
 
 void Project::Run(Pipe &inPipe, Pipe &outPipe, int *keepMe, int numAttsInput, int numAttsOutput) {
     RelOpProjectData *data = new RelOpProjectData(inPipe, outPipe, keepMe, numAttsInput, numAttsOutput);
-    pthread_create(&thread, NULL, ProjectFunction, (void *) data);
-}
-
-void Project::WaitUntilDone() {
-    pthread_join(thread, NULL);
-    cerr << "Project Completed\n";
+    pthread_create(&thread, nullptr, ProjectFunction, (void *) data);
 }
 
 void *ProjectFunction(void *data) {
@@ -68,19 +54,13 @@ void *ProjectFunction(void *data) {
         count++;
     }
 
-    cout << "Found " << count << '\n';
-
     threadData->outPipe.ShutDown();
+    return nullptr;
 }
 
 void Sum::Run(Pipe &inPipe, Pipe &outPipe, Function &computeMe) {
     RelOpSumData *data = new RelOpSumData(inPipe, outPipe, computeMe);
-    pthread_create(&thread, NULL, SumFunction, (void *) data);
-}
-
-void Sum::WaitUntilDone() {
-    pthread_join(thread, NULL);
-    cerr << "Sum Completed\n";
+    pthread_create(&thread, nullptr, SumFunction, (void *) data);
 }
 
 void *SumFunction(void *data) {
@@ -122,20 +102,12 @@ void *SumFunction(void *data) {
     remove("tmp_relop_sum");
 
     threadData->outPipe.ShutDown();
+    return nullptr;
 }
 
 void DuplicateRemoval::Run(Pipe &inPipe, Pipe &outPipe, Schema &mySchema) {
     RelOpDuplicateRemovalData *data = new RelOpDuplicateRemovalData(inPipe, outPipe, mySchema, runLen);
-    pthread_create(&thread, NULL, DuplicateRemoveFunction, (void *) data);
-}
-
-void DuplicateRemoval::WaitUntilDone() {
-    pthread_join(thread, NULL);
-    cerr << "Duplicate Removal Completed\n";
-}
-
-void DuplicateRemoval::Use_n_Pages(int n) {
-    this->runLen = n;
+    pthread_create(&thread, nullptr, DuplicateRemoveFunction, (void *) data);
 }
 
 void *DuplicateRemoveFunction(void *d) {
@@ -169,16 +141,12 @@ void *DuplicateRemoveFunction(void *d) {
 
     data->outPipe.Insert(&temp1);
     data->outPipe.ShutDown();
+    return nullptr;
 }
 
 void WriteOut::Run(Pipe &inPipe, FILE *outFile, Schema &mySchema) {
     RelOpWriteOutData *data = new RelOpWriteOutData(inPipe, outFile, mySchema);
-    pthread_create(&thread, NULL, WriteOutFunction, (void *) data);
-}
-
-void WriteOut::WaitUntilDone() {
-    pthread_join(thread, NULL);
-    cerr << "WriteOut Completed\n";
+    pthread_create(&thread, nullptr, WriteOutFunction, (void *) data);
 }
 
 void *WriteOutFunction(void *d) {
@@ -192,7 +160,118 @@ void *WriteOutFunction(void *d) {
         count++;
     }
 
-    cout << "Number of records : " << count << '\n';
     fclose(data->outFile);
+    return nullptr;
 }
 
+void Join::Run(Pipe &inPipeL, Pipe &inPipeR, Pipe &outPipe, CNF &selOp, Record &literal) {
+    RelOpJoinData *data = new RelOpJoinData();
+    data->inPipeL = &inPipeL;
+    data->inPipeR = &inPipeR;
+    data->outPipe = &outPipe;
+    data->selOp = &selOp;
+    data->literal = &literal;
+    data->runLen = runLen;
+    pthread_create(&thread, nullptr, JoinFunction, (void *) data);
+}
+
+void *JoinFunction(void *d) {
+    RelOpJoinData *data = (RelOpJoinData *) d;
+    ComparisonEngine comp;
+    Record tempLeft;
+    Record tempRight;
+
+    OrderMaker left;
+    OrderMaker right;
+    data->selOp->GetSortOrders(left, right);
+
+    SortInfo leftSortInfo(&left, data->runLen);
+
+    GenericDBFile *leftData = new SortedDBFile();
+    leftData->Create("left_sorted_tmp", sorted, &leftSortInfo);
+
+    while (data->inPipeL->Remove(&tempLeft)) {
+        leftData->Add(tempLeft);
+    }
+
+    leftData->MoveFirst();
+
+    GenericDBFile *rightData = new SortedDBFile();
+    SortInfo rightSortInfo(&right, data->runLen);
+    rightData->Create("right_sorted_tmp", sorted, &rightSortInfo);
+
+    while (data->inPipeR->Remove(&tempRight)) {
+        rightData->Add(tempRight);
+    }
+
+    rightData->MoveFirst();
+
+    int *attsToKeep = nullptr;
+    int rightIsPresent = 0;
+
+    int count = 0;
+
+    while (leftData->GetNext(tempLeft)) {
+        count++;
+        while (rightIsPresent || rightData->GetNext(tempRight)) {
+            int comparisionResult = comp.Compare(&tempLeft, &left, &tempRight, &right);
+
+            if (comparisionResult == 0) {
+                int leftCount = ((int *) tempLeft.bits)[1] / sizeof(int) - 1;
+                int rightCount = ((int *) tempRight.bits)[1] / sizeof(int) - 1;
+
+                if (attsToKeep == nullptr) {
+                    attsToKeep = new int[leftCount + rightCount];
+
+                    int indexInArray = 0;
+                    for (int i = 0; i < leftCount; i++) {
+                        attsToKeep[indexInArray++] = i;
+                    }
+
+                    for (int i = 0; i < rightCount; i++) {
+                        attsToKeep[indexInArray++] = i;
+                    }
+                }
+
+                Record tempMerge;
+                tempMerge.MergeRecords(&tempLeft, &tempRight, leftCount, rightCount, attsToKeep, leftCount + rightCount,
+                                       leftCount);
+                data->outPipe->Insert(&tempMerge);
+            } else if (comparisionResult < 0) {
+                rightIsPresent = 1;
+                break;
+            }
+            rightIsPresent = 0;
+        }
+
+        if (count % 10000 == 0 ) {
+            cout << "Completed : " << count << " records.\n";
+        }
+    }
+
+    leftData->Close();
+    rightData->Close();
+
+    remove("right_sorted_tmp");
+    remove("right_sorted_tmp.metadata");
+    remove("left_sorted_tmp");
+    remove("left_sorted_tmp.metadata");
+
+    data->outPipe->ShutDown();
+    return nullptr;
+}
+
+void GroupBy::Run(Pipe &inPipe, Pipe &outPipe, OrderMaker &groupAtts, Function &computeMe) {
+    RelOpGroupByData  *data = new RelOpGroupByData();
+    data->inPipe = &inPipe;
+    data->outPipe = &outPipe;
+    data->groupAtts = &groupAtts;
+    data->computeMe = &computeMe;
+    data->runLen = runLen;
+
+    pthread_create(&thread, nullptr, JoinFunction, (void *) data);
+}
+
+void *GroupByFunction(void *data) {
+
+}

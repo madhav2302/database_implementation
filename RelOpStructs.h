@@ -111,4 +111,26 @@ struct RelOpWriteOutData {
 };
 
 void *WriteOutFunction(void *data);
+
+typedef struct {
+    Pipe *inPipeL;
+    Pipe *inPipeR;
+    Pipe *outPipe;
+    CNF *selOp;
+    Record *literal;
+    int runLen;
+} RelOpJoinData;
+
+void *JoinFunction(void *data);
+
+typedef struct {
+    Pipe *inPipe;
+    Pipe *outPipe;
+    OrderMaker *groupAtts;
+    Function *computeMe;
+    int runLen;
+} RelOpGroupByData;
+
+void *GroupByFunction(void *data);
+
 #endif //DATABASE_IMPLEMENTATION_RELOPSTRUCTS_H

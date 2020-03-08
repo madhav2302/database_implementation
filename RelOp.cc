@@ -5,7 +5,11 @@
 #include "SortedDBFile.h"
 
 void SelectFile::Run(DBFile &inFile, Pipe &outPipe, CNF &selOp, Record &literal) {
-    RelOpSelectFileData *data = new RelOpSelectFileData(inFile, outPipe, selOp, literal);
+    RelOpSelectFileData *data = new RelOpSelectFileData();
+    data->inFile = &inFile;
+    data->outPipe = &outPipe;
+    data->selOp = &selOp;
+    data->literal = &literal;
     pthread_create(&thread, nullptr, SelectFileFunction, (void *) data);
 }
 
@@ -13,15 +17,19 @@ void *SelectFileFunction(void *data) {
     RelOpSelectFileData *threadData = (RelOpSelectFileData *) data;
 
     Record temp;
-    while (threadData->inFile.GetNext(temp, threadData->selOp, threadData->literal)) {
-        threadData->outPipe.Insert(&temp);
+    while (threadData->inFile->GetNext(temp, *threadData->selOp, *threadData->literal)) {
+        threadData->outPipe->Insert(&temp);
     }
-    threadData->outPipe.ShutDown();
+    threadData->outPipe->ShutDown();
     return nullptr;
 }
 
 void SelectPipe::Run(Pipe &inPipe, Pipe &outPipe, CNF &selOp, Record &literal) {
-    RelOpSelectPipeData *data = new RelOpSelectPipeData(inPipe, outPipe, selOp, literal);
+    RelOpSelectPipeData *data = new RelOpSelectPipeData();
+    data->inPipe = &inPipe;
+    data->outPipe = &outPipe;
+    data->selOp = &selOp;
+    data->literal = &literal;
     pthread_create(&thread, nullptr, SelectPipeFunction, (void *) data);
 }
 
@@ -29,16 +37,21 @@ void *SelectPipeFunction(void *data) {
     RelOpSelectPipeData *threadData = (RelOpSelectPipeData *) data;
     ComparisonEngine comp;
     Record temp;
-    while (threadData->inPipe.Remove(&temp)) {
-        if (comp.Compare(&temp, &threadData->literal, &threadData->selOp))
-            threadData->outPipe.Insert(&temp);
+    while (threadData->inPipe->Remove(&temp)) {
+        if (comp.Compare(&temp, threadData->literal, threadData->selOp))
+            threadData->outPipe->Insert(&temp);
     }
-    threadData->outPipe.ShutDown();
+    threadData->outPipe->ShutDown();
     return nullptr;
 }
 
 void Project::Run(Pipe &inPipe, Pipe &outPipe, int *keepMe, int numAttsInput, int numAttsOutput) {
-    RelOpProjectData *data = new RelOpProjectData(inPipe, outPipe, keepMe, numAttsInput, numAttsOutput);
+    RelOpProjectData *data = new RelOpProjectData();
+    data->inPipe = &inPipe;
+    data->outPipe = &outPipe;
+    data->keepMe = keepMe;
+    data->numAttsInput = numAttsInput;
+    data->numAttsOutput = numAttsOutput;
     pthread_create(&thread, nullptr, ProjectFunction, (void *) data);
 }
 
@@ -48,18 +61,21 @@ void *ProjectFunction(void *data) {
 
     int count = 0;
 
-    while (threadData->inPipe.Remove(&temp)) {
+    while (threadData->inPipe->Remove(&temp)) {
         temp.Project(threadData->keepMe, threadData->numAttsOutput, threadData->numAttsInput);
-        threadData->outPipe.Insert(&temp);
+        threadData->outPipe->Insert(&temp);
         count++;
     }
 
-    threadData->outPipe.ShutDown();
+    threadData->outPipe->ShutDown();
     return nullptr;
 }
 
 void Sum::Run(Pipe &inPipe, Pipe &outPipe, Function &computeMe) {
-    RelOpSumData *data = new RelOpSumData(inPipe, outPipe, computeMe);
+    RelOpSumData *data = new RelOpSumData();
+    data->inPipe = &inPipe;
+    data->outPipe = &outPipe;
+    data->computeMe = &computeMe;
     pthread_create(&thread, nullptr, SumFunction, (void *) data);
 }
 
@@ -72,10 +88,10 @@ void *SumFunction(void *data) {
     double doubleResult = 0.0;
 
     Record temp;
-    while (threadData->inPipe.Remove(&temp)) {
+    while (threadData->inPipe->Remove(&temp)) {
         int tempIntResult = 0;
         double tempDoubleResult = 0.0;
-        Type resultType = threadData->computeMe.Apply(temp, tempIntResult, tempDoubleResult);
+        Type resultType = threadData->computeMe->Apply(temp, tempIntResult, tempDoubleResult);
         if (resultType == Double) type = Double;
 
         intResult += tempIntResult;
@@ -96,17 +112,21 @@ void *SumFunction(void *data) {
     Attribute att = {"att1", type};
     Schema outSchema("out_schema", 1, &att);
     temp.SuckNextRecord(&outSchema, outRecFile);
-    threadData->outPipe.Insert(&temp);
+    threadData->outPipe->Insert(&temp);
 
     fclose(outRecFile);
     remove("tmp_relop_sum");
 
-    threadData->outPipe.ShutDown();
+    threadData->outPipe->ShutDown();
     return nullptr;
 }
 
 void DuplicateRemoval::Run(Pipe &inPipe, Pipe &outPipe, Schema &mySchema) {
-    RelOpDuplicateRemovalData *data = new RelOpDuplicateRemovalData(inPipe, outPipe, mySchema, runLen);
+    RelOpDuplicateRemovalData *data = new RelOpDuplicateRemovalData();
+    data->inPipe = &inPipe;
+    data->outPipe = &outPipe;
+    data->mySchema = &mySchema;
+    data->runLen = runLen;
     pthread_create(&thread, nullptr, DuplicateRemoveFunction, (void *) data);
 }
 
@@ -115,15 +135,15 @@ void *DuplicateRemoveFunction(void *d) {
     RelOpDuplicateRemovalData *data = (RelOpDuplicateRemovalData *) d;
 
     OrderMaker sortOrder;
-    sortOrder.numAtts = data->mySchema.GetNumAtts();
+    sortOrder.numAtts = data->mySchema->GetNumAtts();
 
     for (int i = 0; i < sortOrder.numAtts; i++) {
         sortOrder.whichAtts[i] = i;
-        sortOrder.whichTypes[i] = (data->mySchema.GetAtts() + i)->myType;
+        sortOrder.whichTypes[i] = (data->mySchema->GetAtts() + i)->myType;
     }
 
     Pipe tempPipe(100);
-    BigQ bigQ(data->inPipe, tempPipe, sortOrder, data->runLen);
+    BigQ bigQ(*data->inPipe, tempPipe, sortOrder, data->runLen);
 
     Record temp1;
     Record temp2;
@@ -133,19 +153,22 @@ void *DuplicateRemoveFunction(void *d) {
     if (recordFound) {
         while (tempPipe.Remove(&temp2)) {
             if (comp.Compare(&temp1, &temp2, &sortOrder) != 0) {
-                data->outPipe.Insert(&temp1);
+                data->outPipe->Insert(&temp1);
                 temp1.Consume(&temp2);
             }
         }
     }
 
-    data->outPipe.Insert(&temp1);
-    data->outPipe.ShutDown();
+    data->outPipe->Insert(&temp1);
+    data->outPipe->ShutDown();
     return nullptr;
 }
 
 void WriteOut::Run(Pipe &inPipe, FILE *outFile, Schema &mySchema) {
-    RelOpWriteOutData *data = new RelOpWriteOutData(inPipe, outFile, mySchema);
+    RelOpWriteOutData *data = new RelOpWriteOutData();
+    data->inPipe = &inPipe;
+    data->outFile = outFile;
+    data->mySchema = &mySchema;
     pthread_create(&thread, nullptr, WriteOutFunction, (void *) data);
 }
 
@@ -155,8 +178,8 @@ void *WriteOutFunction(void *d) {
     int count = 0;
     Record temp;
 
-    while (data->inPipe.Remove(&temp)) {
-        temp.WriteToFile(&data->mySchema, data->outFile);
+    while (data->inPipe->Remove(&temp)) {
+        temp.WriteToFile(data->mySchema, data->outFile);
         count++;
     }
 

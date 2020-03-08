@@ -23,6 +23,7 @@ rsync ${PARAM} \
   --exclude='yyfunc.tab.*' \
   --exclude='main' \
   --exclude='test.cat' \
+  --exclude='ps.w.tmp' \
   ./ msodhani@storm.cise.ufl.edu:~/database_implementation/
 #make main
 #make a1test.out

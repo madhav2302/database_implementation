@@ -4,8 +4,26 @@
 #include "BigQ.h"
 #include "SortedDBFile.h"
 
+void *SelectFileFunction(void *data);
+
+void *SelectPipeFunction(void *data);
+
+void *ProjectFunction(void *data);
+
+void *SumFunction(void *data);
+
+void *DuplicateRemoveFunction(void *data);
+
+void *WriteOutFunction(void *data);
+
+void *JoinFunction(void *data);
+
+void *GroupByFunction(void *data);
+
+void WriteValueToFile(Type type, FILE *outRecFile, int intResult, double doubleResult);
+
 void SelectFile::Run(DBFile &inFile, Pipe &outPipe, CNF &selOp, Record &literal) {
-    RelOpSelectFileData *data = new RelOpSelectFileData();
+    auto *data = new RelOpSelectFileData();
     data->inFile = &inFile;
     data->outPipe = &outPipe;
     data->selOp = &selOp;
@@ -14,7 +32,7 @@ void SelectFile::Run(DBFile &inFile, Pipe &outPipe, CNF &selOp, Record &literal)
 }
 
 void *SelectFileFunction(void *data) {
-    RelOpSelectFileData *threadData = (RelOpSelectFileData *) data;
+    auto *threadData = (RelOpSelectFileData *) data;
 
     Record temp;
     while (threadData->inFile->GetNext(temp, *threadData->selOp, *threadData->literal)) {
@@ -25,7 +43,7 @@ void *SelectFileFunction(void *data) {
 }
 
 void SelectPipe::Run(Pipe &inPipe, Pipe &outPipe, CNF &selOp, Record &literal) {
-    RelOpSelectPipeData *data = new RelOpSelectPipeData();
+    auto *data = new RelOpSelectPipeData();
     data->inPipe = &inPipe;
     data->outPipe = &outPipe;
     data->selOp = &selOp;
@@ -34,7 +52,7 @@ void SelectPipe::Run(Pipe &inPipe, Pipe &outPipe, CNF &selOp, Record &literal) {
 }
 
 void *SelectPipeFunction(void *data) {
-    RelOpSelectPipeData *threadData = (RelOpSelectPipeData *) data;
+    auto *threadData = (RelOpSelectPipeData *) data;
     ComparisonEngine comp;
     Record temp;
     while (threadData->inPipe->Remove(&temp)) {
@@ -46,7 +64,7 @@ void *SelectPipeFunction(void *data) {
 }
 
 void Project::Run(Pipe &inPipe, Pipe &outPipe, int *keepMe, int numAttsInput, int numAttsOutput) {
-    RelOpProjectData *data = new RelOpProjectData();
+    auto *data = new RelOpProjectData();
     data->inPipe = &inPipe;
     data->outPipe = &outPipe;
     data->keepMe = keepMe;
@@ -72,15 +90,15 @@ void *ProjectFunction(void *data) {
 }
 
 void Sum::Run(Pipe &inPipe, Pipe &outPipe, Function &computeMe) {
-    RelOpSumData *data = new RelOpSumData();
+    auto *data = new RelOpSumData();
     data->inPipe = &inPipe;
     data->outPipe = &outPipe;
     data->computeMe = &computeMe;
     pthread_create(&thread, nullptr, SumFunction, (void *) data);
 }
 
-void *SumFunction(void *data) {
-    RelOpSumData *threadData = (RelOpSumData *) data;
+void *SumFunction(void *d) {
+    auto *data = (RelOpSumData *) d;
 
     Type type = Int;
 
@@ -88,41 +106,36 @@ void *SumFunction(void *data) {
     double doubleResult = 0.0;
 
     Record temp;
-    while (threadData->inPipe->Remove(&temp)) {
+    while (data->inPipe->Remove(&temp)) {
         int tempIntResult = 0;
         double tempDoubleResult = 0.0;
-        Type resultType = threadData->computeMe->Apply(temp, tempIntResult, tempDoubleResult);
+        Type resultType = data->computeMe->Apply(temp, tempIntResult, tempDoubleResult);
         if (resultType == Double) type = Double;
 
         intResult += tempIntResult;
         doubleResult += tempDoubleResult;
     }
 
-    FILE *outRecFile = fopen("tmp_relop_sum", "w");
-    if (type == Int) {
-        fprintf(outRecFile, "%d|", intResult);
-    } else {
-        double total = intResult + doubleResult;
-        fprintf(outRecFile, "%f|", total);
-    }
+    FILE *outRecFile = fopen("tmp_relop_sum.tmp", "w");
+    WriteValueToFile(type, outRecFile, intResult, doubleResult);
     fclose(outRecFile);
 
-    outRecFile = fopen("tmp_relop_sum", "r");
+    outRecFile = fopen("tmp_relop_sum.tmp", "r");
 
     Attribute att = {"att1", type};
     Schema outSchema("out_schema", 1, &att);
     temp.SuckNextRecord(&outSchema, outRecFile);
-    threadData->outPipe->Insert(&temp);
+    data->outPipe->Insert(&temp);
 
     fclose(outRecFile);
-    remove("tmp_relop_sum");
+    remove("tmp_relop_sum.tmp");
 
-    threadData->outPipe->ShutDown();
+    data->outPipe->ShutDown();
     return nullptr;
 }
 
 void DuplicateRemoval::Run(Pipe &inPipe, Pipe &outPipe, Schema &mySchema) {
-    RelOpDuplicateRemovalData *data = new RelOpDuplicateRemovalData();
+    auto *data = new RelOpDuplicateRemovalData();
     data->inPipe = &inPipe;
     data->outPipe = &outPipe;
     data->mySchema = &mySchema;
@@ -132,7 +145,7 @@ void DuplicateRemoval::Run(Pipe &inPipe, Pipe &outPipe, Schema &mySchema) {
 
 void *DuplicateRemoveFunction(void *d) {
     ComparisonEngine comp;
-    RelOpDuplicateRemovalData *data = (RelOpDuplicateRemovalData *) d;
+    auto *data = (RelOpDuplicateRemovalData *) d;
 
     OrderMaker sortOrder;
     sortOrder.numAtts = data->mySchema->GetNumAtts();
@@ -157,15 +170,16 @@ void *DuplicateRemoveFunction(void *d) {
                 temp1.Consume(&temp2);
             }
         }
+
+        data->outPipe->Insert(&temp1);
     }
 
-    data->outPipe->Insert(&temp1);
     data->outPipe->ShutDown();
     return nullptr;
 }
 
 void WriteOut::Run(Pipe &inPipe, FILE *outFile, Schema &mySchema) {
-    RelOpWriteOutData *data = new RelOpWriteOutData();
+    auto *data = new RelOpWriteOutData();
     data->inPipe = &inPipe;
     data->outFile = outFile;
     data->mySchema = &mySchema;
@@ -173,7 +187,7 @@ void WriteOut::Run(Pipe &inPipe, FILE *outFile, Schema &mySchema) {
 }
 
 void *WriteOutFunction(void *d) {
-    RelOpWriteOutData *data = (RelOpWriteOutData *) d;
+    auto *data = (RelOpWriteOutData *) d;
 
     int count = 0;
     Record temp;
@@ -188,7 +202,7 @@ void *WriteOutFunction(void *d) {
 }
 
 void Join::Run(Pipe &inPipeL, Pipe &inPipeR, Pipe &outPipe, CNF &selOp, Record &literal) {
-    RelOpJoinData *data = new RelOpJoinData();
+    auto *data = new RelOpJoinData();
     data->inPipeL = &inPipeL;
     data->inPipeR = &inPipeR;
     data->outPipe = &outPipe;
@@ -198,8 +212,9 @@ void Join::Run(Pipe &inPipeL, Pipe &inPipeR, Pipe &outPipe, CNF &selOp, Record &
     pthread_create(&thread, nullptr, JoinFunction, (void *) data);
 }
 
+// TODO : Think about using BigQ instead of SortedDBFile
 void *JoinFunction(void *d) {
-    RelOpJoinData *data = (RelOpJoinData *) d;
+    auto *data = (RelOpJoinData *) d;
     ComparisonEngine comp;
     Record tempLeft;
     Record tempRight;
@@ -211,7 +226,7 @@ void *JoinFunction(void *d) {
     SortInfo leftSortInfo(&left, data->runLen);
 
     GenericDBFile *leftData = new SortedDBFile();
-    leftData->Create("left_sorted_tmp", sorted, &leftSortInfo);
+    leftData->Create("left_sorted_tmp.tmp", sorted, &leftSortInfo);
 
     while (data->inPipeL->Remove(&tempLeft)) {
         leftData->Add(tempLeft);
@@ -221,7 +236,7 @@ void *JoinFunction(void *d) {
 
     GenericDBFile *rightData = new SortedDBFile();
     SortInfo rightSortInfo(&right, data->runLen);
-    rightData->Create("right_sorted_tmp", sorted, &rightSortInfo);
+    rightData->Create("right_sorted_tmp.tmp", sorted, &rightSortInfo);
 
     while (data->inPipeR->Remove(&tempRight)) {
         rightData->Add(tempRight);
@@ -267,7 +282,7 @@ void *JoinFunction(void *d) {
             rightIsPresent = 0;
         }
 
-        if (count % 10000 == 0 ) {
+        if (count % 10000 == 0) {
             cout << "Completed : " << count << " records.\n";
         }
     }
@@ -275,26 +290,99 @@ void *JoinFunction(void *d) {
     leftData->Close();
     rightData->Close();
 
-    remove("right_sorted_tmp");
-    remove("right_sorted_tmp.metadata");
-    remove("left_sorted_tmp");
-    remove("left_sorted_tmp.metadata");
+    remove("right_sorted_tmp.tmp");
+    remove("right_sorted_tmp.tmp.metadata");
+    remove("left_sorted_tmp.tmp");
+    remove("left_sorted_tmp.tmp.metadata");
 
     data->outPipe->ShutDown();
     return nullptr;
 }
 
 void GroupBy::Run(Pipe &inPipe, Pipe &outPipe, OrderMaker &groupAtts, Function &computeMe) {
-    RelOpGroupByData  *data = new RelOpGroupByData();
+    auto *data = new RelOpGroupByData();
     data->inPipe = &inPipe;
     data->outPipe = &outPipe;
     data->groupAtts = &groupAtts;
     data->computeMe = &computeMe;
     data->runLen = runLen;
 
-    pthread_create(&thread, nullptr, JoinFunction, (void *) data);
+    pthread_create(&thread, nullptr, GroupByFunction, (void *) data);
 }
 
-void *GroupByFunction(void *data) {
+void *GroupByFunction(void *d) {
+    ComparisonEngine comp;
 
+    auto *data = (RelOpGroupByData *) d;
+
+    Pipe tempPipe(100);
+    BigQ bigQ(*data->inPipe, tempPipe, *data->groupAtts, data->runLen);
+
+    Record temp1;
+    Record temp2;
+
+    int recordFound = tempPipe.Remove(&temp1);
+
+    if (!recordFound) {
+        data->outPipe->ShutDown();
+        return nullptr;
+    }
+
+    FILE *outRecFile = fopen("tmp_relop_group_by.tmp", "w");
+
+    int intResult = 0;
+    double doubleResult = 0.0;
+
+    int tempIntResult;
+    double tempDoubleResult;
+
+    while (tempPipe.Remove(&temp2)) {
+        tempIntResult = 0;
+        tempDoubleResult = 0.0;
+
+        int comparision = comp.Compare(&temp1, &temp2, data->groupAtts);
+
+        Type type = data->computeMe->Apply(temp1, tempIntResult, tempDoubleResult);
+        intResult += tempIntResult;
+        doubleResult += tempDoubleResult;
+
+        if (comparision != 0) {
+            WriteValueToFile(type, outRecFile, intResult, doubleResult);
+            intResult = 0;
+            doubleResult = 0.0;
+        }
+        temp1.Consume(&temp2);
+    }
+
+    tempIntResult = 0;
+    tempDoubleResult = 0.0;
+    Type type = data->computeMe->Apply(temp1, tempIntResult, tempDoubleResult);
+    intResult += tempIntResult;
+    doubleResult += tempDoubleResult;
+    WriteValueToFile(type, outRecFile, intResult, doubleResult);
+
+    fclose(outRecFile);
+
+    outRecFile = fopen("tmp_relop_group_by.tmp", "r");
+    Attribute att = {"att1", type};
+    Schema outSchema("out_schema", 1, &att);
+    Record temp;
+    while (temp.SuckNextRecord(&outSchema, outRecFile)) {
+        data->outPipe->Insert(&temp);
+    }
+
+    fclose(outRecFile);
+    remove("tmp_relop_group_by.tmp");
+
+    data->outPipe->ShutDown();
+    return nullptr;
+}
+
+void WriteValueToFile(Type type, FILE *outRecFile, int intResult, double doubleResult) {
+    if (type == Int) {
+        fprintf(outRecFile, "%d|\n", intResult);
+    } else {
+        double total = intResult + doubleResult;
+        fprintf(outRecFile, "%f|\n", total);
+    }
 }

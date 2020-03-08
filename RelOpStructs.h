@@ -8,16 +8,12 @@ typedef struct  {
     Record *literal;
 } RelOpSelectFileData;
 
-void *SelectFileFunction(void *data);
-
 typedef struct {
     Pipe *inPipe;
     Pipe *outPipe;
     CNF *selOp;
     Record *literal;
 } RelOpSelectPipeData;
-
-void *SelectPipeFunction(void *data);
 
 typedef struct {
     Pipe *inPipe;
@@ -27,15 +23,11 @@ typedef struct {
     int numAttsOutput;
 } RelOpProjectData;
 
-void *ProjectFunction(void *data);
-
 typedef struct {
     Pipe *inPipe;
     Pipe *outPipe;
     Function *computeMe;
 } RelOpSumData;
-
-void *SumFunction(void *data);
 
 typedef struct  {
     Pipe *inPipe;
@@ -44,16 +36,11 @@ typedef struct  {
     int runLen;
 } RelOpDuplicateRemovalData;
 
-void *DuplicateRemoveFunction(void *data);
-
-
 typedef struct  {
     Pipe *inPipe;
     FILE *outFile;
     Schema *mySchema;
 } RelOpWriteOutData;
-
-void *WriteOutFunction(void *data);
 
 typedef struct {
     Pipe *inPipeL;
@@ -64,8 +51,6 @@ typedef struct {
     int runLen;
 } RelOpJoinData;
 
-void *JoinFunction(void *data);
-
 typedef struct {
     Pipe *inPipe;
     Pipe *outPipe;
@@ -73,7 +58,5 @@ typedef struct {
     Function *computeMe;
     int runLen;
 } RelOpGroupByData;
-
-void *GroupByFunction(void *data);
 
 #endif //DATABASE_IMPLEMENTATION_RELOPSTRUCTS_H

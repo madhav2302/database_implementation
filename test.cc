@@ -278,14 +278,18 @@ void q6 () {
 	Attribute joinatt[] = {IA,SA,SA,s_nationkey,SA,DA,SA,IA,IA,IA,ps_supplycost,SA};
 	Schema join_sch ("join_sch", outAtts, joinatt);
 
+	// TODO : Confirm below details
 	GroupBy G;
 		// _s (input pipe)
-		Pipe _out (1);
+		Pipe _out (100);
 		Function func;
 			char *str_sum = "(ps_supplycost)";
 			get_cnf (str_sum, &join_sch, func);
 			func.Print ();
-			OrderMaker grp_order (&join_sch);
+			OrderMaker grp_order;
+			grp_order.numAtts = 1;
+			grp_order.whichAtts[0] = 3;
+			grp_order.whichTypes[0] = Int;
 	G.Use_n_Pages (1);
 
 	SF_ps.Run (dbf_ps, _ps, cnf_ps, lit_ps); // 161 recs qualified

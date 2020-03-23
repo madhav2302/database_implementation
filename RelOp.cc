@@ -4,23 +4,15 @@
 #include "BigQ.h"
 #include "SortedDBFile.h"
 
-void *SelectFileFunction(void *data);
-
-void *SelectPipeFunction(void *data);
-
-void *ProjectFunction(void *data);
-
-void *SumFunction(void *data);
-
-void *DuplicateRemoveFunction(void *data);
-
-void *WriteOutFunction(void *data);
-
-void *JoinFunction(void *data);
-
-void *GroupByFunction(void *data);
-
 void WriteValueToFile(Type type, FILE *outRecFile, int intResult, double doubleResult);
+
+void RelationalOp::WaitUntilDone() {
+    pthread_join(thread, nullptr);
+}
+
+void RelationalOp::Use_n_Pages(int n) {
+    runLen = n;
+}
 
 void SelectFile::Run(DBFile &inFile, Pipe &outPipe, CNF &selOp, Record &literal) {
     auto *data = new RelOpSelectFileData();
@@ -28,11 +20,11 @@ void SelectFile::Run(DBFile &inFile, Pipe &outPipe, CNF &selOp, Record &literal)
     data->outPipe = &outPipe;
     data->selOp = &selOp;
     data->literal = &literal;
-    pthread_create(&thread, nullptr, SelectFileFunction, (void *) data);
+    pthread_create(&thread, nullptr, ThreadMethod, (void *) data);
 }
 
-void *SelectFileFunction(void *data) {
-    auto *threadData = (RelOpSelectFileData *) data;
+void *SelectFile::ThreadMethod(void *d) {
+    auto *threadData = (RelOpSelectFileData *) d;
 
     Record temp;
     while (threadData->inFile->GetNext(temp, *threadData->selOp, *threadData->literal)) {
@@ -48,10 +40,10 @@ void SelectPipe::Run(Pipe &inPipe, Pipe &outPipe, CNF &selOp, Record &literal) {
     data->outPipe = &outPipe;
     data->selOp = &selOp;
     data->literal = &literal;
-    pthread_create(&thread, nullptr, SelectPipeFunction, (void *) data);
+    pthread_create(&thread, nullptr, ThreadMethod, (void *) data);
 }
 
-void *SelectPipeFunction(void *data) {
+void *SelectPipe::ThreadMethod(void *data) {
     auto *threadData = (RelOpSelectPipeData *) data;
     ComparisonEngine comp;
     Record temp;
@@ -70,11 +62,11 @@ void Project::Run(Pipe &inPipe, Pipe &outPipe, int *keepMe, int numAttsInput, in
     data->keepMe = keepMe;
     data->numAttsInput = numAttsInput;
     data->numAttsOutput = numAttsOutput;
-    pthread_create(&thread, nullptr, ProjectFunction, (void *) data);
+    pthread_create(&thread, nullptr, ThreadMethod, (void *) data);
 }
 
-void *ProjectFunction(void *data) {
-    RelOpProjectData *threadData = (RelOpProjectData *) data;
+void *Project::ThreadMethod(void *data) {
+    auto *threadData = (RelOpProjectData *) data;
     Record temp;
 
     int count = 0;
@@ -94,10 +86,10 @@ void Sum::Run(Pipe &inPipe, Pipe &outPipe, Function &computeMe) {
     data->inPipe = &inPipe;
     data->outPipe = &outPipe;
     data->computeMe = &computeMe;
-    pthread_create(&thread, nullptr, SumFunction, (void *) data);
+    pthread_create(&thread, nullptr, ThreadMethod, (void *) data);
 }
 
-void *SumFunction(void *d) {
+void *Sum::ThreadMethod(void *d) {
     auto *data = (RelOpSumData *) d;
 
     Type type = Int;
@@ -140,20 +132,14 @@ void DuplicateRemoval::Run(Pipe &inPipe, Pipe &outPipe, Schema &mySchema) {
     data->outPipe = &outPipe;
     data->mySchema = &mySchema;
     data->runLen = runLen;
-    pthread_create(&thread, nullptr, DuplicateRemoveFunction, (void *) data);
+    pthread_create(&thread, nullptr, ThreadMethod, (void *) data);
 }
 
-void *DuplicateRemoveFunction(void *d) {
+void *DuplicateRemoval::ThreadMethod(void *d) {
     ComparisonEngine comp;
     auto *data = (RelOpDuplicateRemovalData *) d;
 
-    OrderMaker sortOrder;
-    sortOrder.numAtts = data->mySchema->GetNumAtts();
-
-    for (int i = 0; i < sortOrder.numAtts; i++) {
-        sortOrder.whichAtts[i] = i;
-        sortOrder.whichTypes[i] = (data->mySchema->GetAtts() + i)->myType;
-    }
+    OrderMaker sortOrder(data->mySchema);
 
     Pipe tempPipe(100);
     BigQ bigQ(*data->inPipe, tempPipe, sortOrder, data->runLen);
@@ -183,10 +169,10 @@ void WriteOut::Run(Pipe &inPipe, FILE *outFile, Schema &mySchema) {
     data->inPipe = &inPipe;
     data->outFile = outFile;
     data->mySchema = &mySchema;
-    pthread_create(&thread, nullptr, WriteOutFunction, (void *) data);
+    pthread_create(&thread, nullptr, ThreadMethod, (void *) data);
 }
 
-void *WriteOutFunction(void *d) {
+void *WriteOut::ThreadMethod(void *d) {
     auto *data = (RelOpWriteOutData *) d;
 
     int count = 0;
@@ -209,11 +195,11 @@ void Join::Run(Pipe &inPipeL, Pipe &inPipeR, Pipe &outPipe, CNF &selOp, Record &
     data->selOp = &selOp;
     data->literal = &literal;
     data->runLen = runLen;
-    pthread_create(&thread, nullptr, JoinFunction, (void *) data);
+    pthread_create(&thread, nullptr, ThreadMethod, (void *) data);
 }
 
 // TODO : Think about using BigQ instead of SortedDBFile
-void *JoinFunction(void *d) {
+void *Join::ThreadMethod(void *d) {
     auto *data = (RelOpJoinData *) d;
     ComparisonEngine comp;
     Record tempLeft;
@@ -226,7 +212,7 @@ void *JoinFunction(void *d) {
     SortInfo leftSortInfo(&left, data->runLen);
 
     GenericDBFile *leftData = new SortedDBFile();
-    leftData->Create("left_sorted_tmp.tmp", sorted, &leftSortInfo);
+    leftData->Create("tmp_left_sorted.tmp", sorted, &leftSortInfo);
 
     while (data->inPipeL->Remove(&tempLeft)) {
         leftData->Add(tempLeft);
@@ -236,7 +222,7 @@ void *JoinFunction(void *d) {
 
     GenericDBFile *rightData = new SortedDBFile();
     SortInfo rightSortInfo(&right, data->runLen);
-    rightData->Create("right_sorted_tmp.tmp", sorted, &rightSortInfo);
+    rightData->Create("tmp_right_sorted.tmp", sorted, &rightSortInfo);
 
     while (data->inPipeR->Remove(&tempRight)) {
         rightData->Add(tempRight);
@@ -255,12 +241,11 @@ void *JoinFunction(void *d) {
             int comparisionResult = comp.Compare(&tempLeft, &left, &tempRight, &right);
 
             if (comparisionResult == 0) {
-                int leftCount = ((int *) tempLeft.bits)[1] / sizeof(int) - 1;
-                int rightCount = ((int *) tempRight.bits)[1] / sizeof(int) - 1;
+                int leftCount = tempLeft.NumberOfAtts();
+                int rightCount = tempRight.NumberOfAtts();
 
                 if (attsToKeep == nullptr) {
                     attsToKeep = new int[leftCount + rightCount];
-
                     int indexInArray = 0;
                     for (int i = 0; i < leftCount; i++) {
                         attsToKeep[indexInArray++] = i;
@@ -290,10 +275,10 @@ void *JoinFunction(void *d) {
     leftData->Close();
     rightData->Close();
 
-    remove("right_sorted_tmp.tmp");
-    remove("right_sorted_tmp.tmp.metadata");
-    remove("left_sorted_tmp.tmp");
-    remove("left_sorted_tmp.tmp.metadata");
+    remove("tmp_right_sorted.tmp");
+    remove("tmp_right_sorted.tmp.metadata");
+    remove("tmp_left_sorted.tmp");
+    remove("tmp_left_sorted.tmp.metadata");
 
     data->outPipe->ShutDown();
     return nullptr;
@@ -307,10 +292,10 @@ void GroupBy::Run(Pipe &inPipe, Pipe &outPipe, OrderMaker &groupAtts, Function &
     data->computeMe = &computeMe;
     data->runLen = runLen;
 
-    pthread_create(&thread, nullptr, GroupByFunction, (void *) data);
+    pthread_create(&thread, nullptr, ThreadMethod, (void *) data);
 }
 
-void *GroupByFunction(void *d) {
+void *GroupBy::ThreadMethod(void *d) {
     ComparisonEngine comp;
 
     auto *data = (RelOpGroupByData *) d;

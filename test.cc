@@ -127,7 +127,7 @@ void q2 () {
 	SF_p.WaitUntilDone ();
 	P_p.WaitUntilDone ();
 
-	Attribute att3[] = {IA, SA, SA};
+	Attribute att3[] = {IA, SA, DA};
 	Schema out_sch ("out_sch", numAttsOut, att3);
 	int cnt = clear_pipe (_out, &out_sch, true);
 
@@ -287,9 +287,7 @@ void q6 () {
 			get_cnf (str_sum, &join_sch, func);
 			func.Print ();
 			OrderMaker grp_order;
-			grp_order.numAtts = 1;
-			grp_order.whichAtts[0] = 3;
-			grp_order.whichTypes[0] = Int;
+            grp_order.AddOrder(3, Int);
 	G.Use_n_Pages (1);
 
 	SF_ps.Run (dbf_ps, _ps, cnf_ps, lit_ps); // 161 recs qualified

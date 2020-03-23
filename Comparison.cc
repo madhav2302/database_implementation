@@ -117,6 +117,17 @@ void OrderMaker :: Print () {
 	}
 }
 
+void OrderMaker::AddOrder(int whichAtt, Type whichType) {
+    if (numAtts == MAX_ANDS) {
+        cerr << "Maximum orders can be : " << MAX_ANDS << '\n';
+        exit(1);
+    }
+
+    whichAtts[numAtts] = whichAtt;
+    whichTypes[numAtts] = whichType;
+    numAtts++;
+}
+
 void CNF::GetSortOrder(OrderMaker &sortOrder, OrderMaker &query) {
     query.numAtts = 0;
     for (int index = 0; index < sortOrder.numAtts; index++) {

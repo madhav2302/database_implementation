@@ -135,7 +135,7 @@ void SortedDBFile::FlushPage() {
 }
 
 void SortedDBFile::WriteMetadata(const char *fpath, fType file_type, void *startup) {
-    SortInfo *startUpSortInfo = (SortInfo *) startup;
+    auto *startUpSortInfo = (SortInfo *) startup;
     ofstream metadata(fpath + std::string(".metadata"));
     if (metadata.is_open()) {
         // Write File Type
@@ -156,7 +156,7 @@ void SortedDBFile::WriteMetadata(const char *fpath, fType file_type, void *start
 }
 
 void SortedDBFile::ReadMetadata(const char *fpath) {
-    OrderMaker *orderMaker = new OrderMaker();
+    auto *orderMaker = new OrderMaker();
     this->sortInfo = new SortInfo(orderMaker, 0);
     string line;
     ifstream metadata_read(fpath + std::string(".metadata"));
@@ -167,16 +167,14 @@ void SortedDBFile::ReadMetadata(const char *fpath) {
         getline(metadata_read, line);
         this->sortInfo->runLength = std::stoi(line);
         getline(metadata_read, line);
-        int numAtts = std::stoi(line);
 
-        this->sortInfo->myOrder->numAtts = numAtts;
+        for (int index = 0; index < std::stoi(line); index++) {
+            string att;
+            getline(metadata_read, att);
 
-        for (int index = 0; index < numAtts; index++) {
-            getline(metadata_read, line);
-            this->sortInfo->myOrder->whichAtts[index] = stoi(line);
-
-            getline(metadata_read, line);
-            this->sortInfo->myOrder->whichTypes[index] = (Type) stoi(line);
+            string type;
+            getline(metadata_read, type);
+            sortInfo->myOrder->AddOrder(stoi(att), (Type) stoi(type));
         }
         metadata_read.close();
     } else {

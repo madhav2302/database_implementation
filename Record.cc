@@ -491,5 +491,8 @@ void Record::WriteToFile(Schema *mySchema, FILE *textFile) {
     fprintf(textFile, "\n");
 }
 
+int Record::NumberOfAtts() {
+    return ((int *) bits)[1] / sizeof(int) - 1;
+}
 
 

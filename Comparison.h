@@ -60,6 +60,8 @@ public:
 
 	// print to the screen
 	void Print ();
+
+	void AddOrder(int whichAtt, Type whichType);
 };
 
 class Record;

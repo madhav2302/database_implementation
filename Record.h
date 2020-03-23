@@ -72,6 +72,8 @@ public:
 	// Write the record into file provided based on schema provided
 	// TextFile doesn't contain column names provided in schema
 	void WriteToFile(Schema *mySchema, FILE *textFile);
+
+	int NumberOfAtts();
 };
 
 #endif

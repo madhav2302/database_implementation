@@ -35,7 +35,7 @@ void test4() {
     OrderMaker o;
     rel->get_sort_order(o);
 
-    int runlen = 1000;
+    int runlen = 8;
 
     struct {
         OrderMaker *o;
@@ -95,7 +95,7 @@ void test1() {
     OrderMaker o;
     rel->get_sort_order(o);
 
-    int runlen = 1000;
+    int runlen = 0;
     while (runlen < 1) {
         cout << "\t\n specify runlength:\n\t ";
         cin >> runlen;
@@ -120,7 +120,7 @@ void test1() {
 
     int proc = 1, res = 1, tot = 0;
     while (proc && res) {
-        int x = 2;
+        int x = 0;
         while (x < 1 || x > 3) {
             cout << "\n select option for : " << rel->path() << endl;
             cout << " \t 1. add a few (1 to 1k recs)\n";
@@ -195,16 +195,16 @@ int main(int argc, char *argv[]) {
     setup();
 
     relation *rel_ptr[] = {n, r, c, p, ps, s, o, li};
-    void (*test_ptr[])() = {&test1, &test2, &test3};
+    void (*test_ptr[])() = {&test1, &test2, &test3, &test4};
     void (*test)();
 
     int tindx = 0;
-    while (tindx < 1 || tindx > 3) {
+    while (tindx < 1 || tindx > 4) {
         cout << " select test option: \n";
         cout << " \t 1. create sorted dbfile\n";
         cout << " \t 2. scan a dbfile\n";
         cout << " \t 3. run some query \n ";
-//        cout << " \t 4. Load data as sorted file \n \t ";
+        cout << " \t 4. Load data as sorted file \n \t ";
         cin >> tindx;
     }
 

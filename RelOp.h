@@ -15,54 +15,66 @@ protected:
 public:
     // blocks the caller until the particular relational operator
     // has run to completion
-    void WaitUntilDone() {
-        pthread_join(thread, NULL);
-    };
+    void WaitUntilDone();
 
     // tell us how much internal memory the operation can use
-    void Use_n_Pages(int n) {
-        runLen = n;
-    }
+    void Use_n_Pages(int n);
 };
 
 class SelectFile : public RelationalOp {
 public:
     void Run(DBFile &inFile, Pipe &outPipe, CNF &selOp, Record &literal);
+
+    static void *ThreadMethod(void *d);
 };
 
 class SelectPipe : public RelationalOp {
 public:
     void Run(Pipe &inPipe, Pipe &outPipe, CNF &selOp, Record &literal);
+
+    static void *ThreadMethod(void *data);
 };
 
 class Project : public RelationalOp {
 public:
     void Run(Pipe &inPipe, Pipe &outPipe, int *keepMe, int numAttsInput, int numAttsOutput);
+
+    static void *ThreadMethod(void *data);
 };
 
 class Join : public RelationalOp {
 public:
     void Run(Pipe &inPipeL, Pipe &inPipeR, Pipe &outPipe, CNF &selOp, Record &literal);
+
+    static void *ThreadMethod(void *data);
 };
 
 class DuplicateRemoval : public RelationalOp {
 public:
     void Run(Pipe &inPipe, Pipe &outPipe, Schema &mySchema);
+
+    static void *ThreadMethod(void *data);
 };
 
 class Sum : public RelationalOp {
 public:
     void Run(Pipe &inPipe, Pipe &outPipe, Function &computeMe);
+
+    static void *ThreadMethod(void *data);
 };
 
 class GroupBy : public RelationalOp {
 public:
     void Run(Pipe &inPipe, Pipe &outPipe, OrderMaker &groupAtts, Function &computeMe);
+
+    static void *ThreadMethod(void *data);
 };
 
 class WriteOut : public RelationalOp {
 public:
     void Run(Pipe &inPipe, FILE *outFile, Schema &mySchema);
+
+    static void *ThreadMethod(void *data);
 };
 
 #endif

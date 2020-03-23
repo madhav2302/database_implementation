@@ -25,9 +25,9 @@ void *SelectFile::ThreadMethod(void *d) {
     auto *threadData = (RelOpSelectFileData *) d;
 
     Record temp;
-    while (threadData->inFile->GetNext(temp, *threadData->selOp, *threadData->literal)) {
+    while (threadData->inFile->GetNext(temp, *threadData->selOp, *threadData->literal))
         threadData->outPipe->Insert(&temp);
-    }
+
     threadData->outPipe->ShutDown();
     return nullptr;
 }
@@ -67,12 +67,9 @@ void *Project::ThreadMethod(void *data) {
     auto *threadData = (RelOpProjectData *) data;
     Record temp;
 
-    int count = 0;
-
     while (threadData->inPipe->Remove(&temp)) {
         temp.Project(threadData->keepMe, threadData->numAttsOutput, threadData->numAttsInput);
         threadData->outPipe->Insert(&temp);
-        count++;
     }
 
     threadData->outPipe->ShutDown();
@@ -134,17 +131,12 @@ void *DuplicateRemoval::ThreadMethod(void *d) {
     Pipe tempPipe(100);
     BigQ bigQ(*data->inPipe, tempPipe, sortOrder, data->runLen);
 
-    Record temp1;
-    Record temp2;
+    Record temp1, temp2;
 
-    int recordFound = tempPipe.Remove(&temp1);
-
-    if (recordFound) {
+    if (tempPipe.Remove(&temp1)) {
         while (tempPipe.Remove(&temp2)) {
-            if (comp.Compare(&temp1, &temp2, &sortOrder) != 0) {
-                data->outPipe->Insert(&temp1);
-                temp1.Consume(&temp2);
-            }
+            if (comp.Compare(&temp1, &temp2, &sortOrder) != 0) data->outPipe->Insert(&temp1);
+            temp1.Consume(&temp2);
         }
 
         data->outPipe->Insert(&temp1);
@@ -165,13 +157,9 @@ void WriteOut::Run(Pipe &inPipe, FILE *outFile, Schema &mySchema) {
 void *WriteOut::ThreadMethod(void *d) {
     auto *data = (RelOpWriteOutData *) d;
 
-    int count = 0;
     Record temp;
 
-    while (data->inPipe->Remove(&temp)) {
-        temp.WriteToFile(data->mySchema, data->outFile);
-        count++;
-    }
+    while (data->inPipe->Remove(&temp)) temp.WriteToFile(data->mySchema, data->outFile);
 
     fclose(data->outFile);
     return nullptr;
@@ -188,7 +176,6 @@ void Join::Run(Pipe &inPipeL, Pipe &inPipeR, Pipe &outPipe, CNF &selOp, Record &
     pthread_create(&thread, nullptr, ThreadMethod, (void *) data);
 }
 
-// TODO : Think about using BigQ instead of SortedDBFile
 void *Join::ThreadMethod(void *d) {
     auto *data = (RelOpJoinData *) d;
     ComparisonEngine comp;
@@ -286,9 +273,7 @@ void GroupBy::Run(Pipe &inPipe, Pipe &outPipe, OrderMaker &groupAtts, Function &
 }
 
 std::string AppendOrderAtts(std::string output, OrderMaker &o, Record &r) {
-    for (int index = 0; index < o.numAtts; index++) {
-        output += r.GetAtt(o.whichAtts[index], o.whichTypes[index]) + "|";
-    }
+    for (int index = 0; index < o.numAtts; index++) output += r.GetAtt(o.whichAtts[index], o.whichTypes[index]) + "|";
     return output;
 }
 
@@ -297,24 +282,21 @@ void *GroupBy::ThreadMethod(void *d) {
 
     auto *data = (RelOpGroupByData *) d;
     Attribute atts[1 + data->groupAtts->numAtts];
-    Attribute x ={"attNum", Double};
+    Attribute x = {"attNum", Double};
     atts[0] = x;
     for (int i = 0; i < data->groupAtts->numAtts; i++) {
         Attribute y = {"att", data->groupAtts->whichTypes[i]};
         atts[1 + i] = y;
     }
     Schema outSchema("out_schema", 1 + data->groupAtts->numAtts, atts);
-    Record temp;
+    Record outPipeTemp;
 
     Pipe tempPipe(100);
     BigQ bigQ(*data->inPipe, tempPipe, *data->groupAtts, data->runLen);
 
-    Record temp1;
-    Record temp2;
+    Record temp1, temp2;
 
-    int recordFound = tempPipe.Remove(&temp1);
-
-    if (!recordFound) {
+    if (!tempPipe.Remove(&temp1)) {
         data->outPipe->ShutDown();
         return nullptr;
     }
@@ -335,16 +317,18 @@ void *GroupBy::ThreadMethod(void *d) {
         intResult += tempIntResult;
         doubleResult += tempDoubleResult;
 
-        if (comparision != 0) {
-            std::string output =
-                    type == Int ? std::to_string(intResult) : std::to_string(intResult + doubleResult) + "|";
-            atts->myType = type;
-            temp.ComposeRecord(&outSchema, AppendOrderAtts(output, *data->groupAtts, temp1).c_str());
-            data->outPipe->Insert(&temp);
-
-            intResult = 0;
-            doubleResult = 0.0;
+        if (comparision == 0) {
+            temp1.Consume(&temp2);
+            continue;
         }
+
+        std::string output = type == Int ? std::to_string(intResult) : std::to_string(intResult + doubleResult) + "|";
+        atts->myType = type;
+        outPipeTemp.ComposeRecord(&outSchema, AppendOrderAtts(output, *data->groupAtts, temp1).c_str());
+        data->outPipe->Insert(&outPipeTemp);
+
+        intResult = 0;
+        doubleResult = 0.0;
         temp1.Consume(&temp2);
     }
 
@@ -357,8 +341,8 @@ void *GroupBy::ThreadMethod(void *d) {
     std::string output =
             type == Int ? std::to_string(intResult) : std::to_string(intResult + doubleResult) + "|";
     atts->myType = type;
-    temp.ComposeRecord(&outSchema, AppendOrderAtts(output, *data->groupAtts, temp1).c_str());
-    data->outPipe->Insert(&temp);
+    outPipeTemp.ComposeRecord(&outSchema, AppendOrderAtts(output, *data->groupAtts, temp1).c_str());
+    data->outPipe->Insert(&outPipeTemp);
 
     data->outPipe->ShutDown();
     return nullptr;

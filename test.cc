@@ -298,7 +298,8 @@ void q6 () {
 	J.WaitUntilDone ();
 	G.WaitUntilDone ();
 
-	Schema sum_sch ("sum_sch", 1, &DA);
+	Attribute sumatt[] = {ps_supplycost, s_nationkey};
+	Schema sum_sch ("sum_sch", 2, sumatt);
 	int cnt = clear_pipe (_out, &sum_sch, true);
 	cout << " query6 returned sum for " << cnt << " groups (expected 25 groups)\n";
 }

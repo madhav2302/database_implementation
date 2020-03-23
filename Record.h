@@ -12,6 +12,7 @@
 #include "File.h"
 #include "Comparison.h"
 #include "ComparisonEngine.h"
+#include <string>
 
 
 
@@ -74,6 +75,8 @@ public:
 	void WriteToFile(Schema *mySchema, FILE *textFile);
 
 	int NumberOfAtts();
+
+	std::string GetAtt(int index, Type type);
 };
 
 #endif

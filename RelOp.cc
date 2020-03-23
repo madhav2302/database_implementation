@@ -4,8 +4,6 @@
 #include "BigQ.h"
 #include "SortedDBFile.h"
 
-void WriteValueToFile(Type type, FILE *outRecFile, int intResult, double doubleResult);
-
 void RelationalOp::WaitUntilDone() {
     pthread_join(thread, nullptr);
 }
@@ -108,19 +106,11 @@ void *Sum::ThreadMethod(void *d) {
         doubleResult += tempDoubleResult;
     }
 
-    FILE *outRecFile = fopen("tmp_relop_sum.tmp", "w");
-    WriteValueToFile(type, outRecFile, intResult, doubleResult);
-    fclose(outRecFile);
-
-    outRecFile = fopen("tmp_relop_sum.tmp", "r");
-
+    std::string output = type == Int ? std::to_string(intResult) : std::to_string(intResult + doubleResult) + "|";
     Attribute att = {"att1", type};
     Schema outSchema("out_schema", 1, &att);
-    temp.SuckNextRecord(&outSchema, outRecFile);
+    temp.ComposeRecord(&outSchema, const_cast<char *>(output.c_str()));
     data->outPipe->Insert(&temp);
-
-    fclose(outRecFile);
-    remove("tmp_relop_sum.tmp");
 
     data->outPipe->ShutDown();
     return nullptr;
@@ -295,10 +285,26 @@ void GroupBy::Run(Pipe &inPipe, Pipe &outPipe, OrderMaker &groupAtts, Function &
     pthread_create(&thread, nullptr, ThreadMethod, (void *) data);
 }
 
+std::string AppendOrderAtts(std::string output, OrderMaker &o, Record &r) {
+    for (int index = 0; index < o.numAtts; index++) {
+        output += r.GetAtt(o.whichAtts[index], o.whichTypes[index]) + "|";
+    }
+    return output;
+}
+
 void *GroupBy::ThreadMethod(void *d) {
     ComparisonEngine comp;
 
     auto *data = (RelOpGroupByData *) d;
+    Attribute atts[1 + data->groupAtts->numAtts];
+    Attribute x ={"attNum", Double};
+    atts[0] = x;
+    for (int i = 0; i < data->groupAtts->numAtts; i++) {
+        Attribute y = {"att", data->groupAtts->whichTypes[i]};
+        atts[1 + i] = y;
+    }
+    Schema outSchema("out_schema", 1 + data->groupAtts->numAtts, atts);
+    Record temp;
 
     Pipe tempPipe(100);
     BigQ bigQ(*data->inPipe, tempPipe, *data->groupAtts, data->runLen);
@@ -312,8 +318,6 @@ void *GroupBy::ThreadMethod(void *d) {
         data->outPipe->ShutDown();
         return nullptr;
     }
-
-    FILE *outRecFile = fopen("tmp_relop_group_by.tmp", "w");
 
     int intResult = 0;
     double doubleResult = 0.0;
@@ -332,7 +336,12 @@ void *GroupBy::ThreadMethod(void *d) {
         doubleResult += tempDoubleResult;
 
         if (comparision != 0) {
-            WriteValueToFile(type, outRecFile, intResult, doubleResult);
+            std::string output =
+                    type == Int ? std::to_string(intResult) : std::to_string(intResult + doubleResult) + "|";
+            atts->myType = type;
+            temp.ComposeRecord(&outSchema, AppendOrderAtts(output, *data->groupAtts, temp1).c_str());
+            data->outPipe->Insert(&temp);
+
             intResult = 0;
             doubleResult = 0.0;
         }
@@ -344,30 +353,13 @@ void *GroupBy::ThreadMethod(void *d) {
     Type type = data->computeMe->Apply(temp1, tempIntResult, tempDoubleResult);
     intResult += tempIntResult;
     doubleResult += tempDoubleResult;
-    WriteValueToFile(type, outRecFile, intResult, doubleResult);
 
-    fclose(outRecFile);
-
-    outRecFile = fopen("tmp_relop_group_by.tmp", "r");
-    Attribute att = {"att1", type};
-    Schema outSchema("out_schema", 1, &att);
-    Record temp;
-    while (temp.SuckNextRecord(&outSchema, outRecFile)) {
-        data->outPipe->Insert(&temp);
-    }
-
-    fclose(outRecFile);
-    remove("tmp_relop_group_by.tmp");
+    std::string output =
+            type == Int ? std::to_string(intResult) : std::to_string(intResult + doubleResult) + "|";
+    atts->myType = type;
+    temp.ComposeRecord(&outSchema, AppendOrderAtts(output, *data->groupAtts, temp1).c_str());
+    data->outPipe->Insert(&temp);
 
     data->outPipe->ShutDown();
     return nullptr;
-}
-
-void WriteValueToFile(Type type, FILE *outRecFile, int intResult, double doubleResult) {
-    if (type == Int) {
-        fprintf(outRecFile, "%d|\n", intResult);
-    } else {
-        double total = intResult + doubleResult;
-        fprintf(outRecFile, "%f|\n", total);
-    }
 }

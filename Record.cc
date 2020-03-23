@@ -495,4 +495,18 @@ int Record::NumberOfAtts() {
     return ((int *) bits)[1] / sizeof(int) - 1;
 }
 
+std::string Record::GetAtt(int index, Type type) {
+    int pointer = ((int *) bits)[index + 1];
+
+    if (type == Int) {
+        int *myInt = (int *) &(bits[pointer]);
+        return std::to_string(*myInt);
+    } else if (type == Double) {
+        double *myDouble = (double *) &(bits[pointer]);
+        return std::to_string(*myDouble);
+    } else if (type == String) {
+        char *myString = (char *) &(bits[pointer]);
+        return std::to_string(*myString);
+    }
+}
 

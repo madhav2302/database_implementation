@@ -198,6 +198,7 @@ void writeToFile(std::string fileName, Pipe *pipe) {
 }
 
 void NestedBlockJoin(Pipe *pipeL, Pipe *pipeR, int runlen, Pipe *out) {
+    Record *outerRecord = new Record(), *innerRecord = new Record(), mergeRecord;
     std::string fileNameL = "tmp_file_l_" + randomFileName(), fileNameR = "tmp_file_r_" + randomFileName();
     writeToFile(fileNameL, pipeL);
     writeToFile(fileNameR, pipeR);
@@ -211,26 +212,34 @@ void NestedBlockJoin(Pipe *pipeL, Pipe *pipeR, int runlen, Pipe *out) {
 
     for (int outerBlockNumber = 0;
          outerBlockNumber < std::ceil((outer.GetLength() - 1) / (double) runlen); outerBlockNumber++) {
-        cerr << "outer run " << outerBlockNumber << '\n';
+        SingleRun outerBlock(&outer, runlen, outerBlockNumber);
+        vector<Record *> outerRecords;
+        while (outerBlock.GetFirst(innerRecord)) {
+            outerRecords.push_back(innerRecord);
+            outerRecord = new Record();
+        }
+
         for (int innerBlockNumber = 0;
              innerBlockNumber < std::ceil((inner.GetLength() - 1) / (double) runlen); innerBlockNumber++) {
-            cerr << "inner run " << innerBlockNumber << '\n';
-            SingleRun outerBlock(&outer, runlen, outerBlockNumber);
-            Record outerRecord, innerRecord, mergeRecord;
-            while (outerBlock.GetFirst(&outerRecord)) {
-                SingleRun innerBlock(&inner, runlen, innerBlockNumber);
-                while (innerBlock.GetFirst(&innerRecord)) {
+            SingleRun innerBlock(&inner, runlen, innerBlockNumber);
+            vector<Record *> innerRecords;
+            while (innerBlock.GetFirst(innerRecord)) {
+                innerRecords.push_back(innerRecord);
+                innerRecord = new Record();
+            }
+
+            for (Record *o : outerRecords) {
+                for (Record *i : innerRecords) {
                     if (attsToKeep == nullptr) {
-                        leftCount = outerRecord.NumberOfAtts();
-                        rightCount = innerRecord.NumberOfAtts();
+                        leftCount = o->NumberOfAtts();
+                        rightCount = i->NumberOfAtts();
                         attsToKeep = new int[leftCount + rightCount];
                         int indexInArray = 0;
                         for (int i = 0; i < leftCount; i++) attsToKeep[indexInArray++] = i;
                         for (int i = 0; i < rightCount; i++) attsToKeep[indexInArray++] = i;
                     }
 
-                    mergeRecord.MergeRecords(&outerRecord, &innerRecord, leftCount, rightCount, attsToKeep,
-                                             leftCount + rightCount,
+                    mergeRecord.MergeRecords(o, i, leftCount, rightCount, attsToKeep, leftCount + rightCount,
                                              leftCount);
                     out->Insert(&mergeRecord);
                 }
@@ -244,6 +253,8 @@ void NestedBlockJoin(Pipe *pipeL, Pipe *pipeR, int runlen, Pipe *out) {
     remove(fileNameR.c_str());
 }
 
+// TODO : Fix join if there are multiple records on first side of same values,
+// It will make miss records for second table
 void ComparisonBasedJoin(Pipe *pipeL, Pipe *pipeR, OrderMaker *orderL, OrderMaker *orderR, Pipe *out) {
     ComparisonEngine comp;
     Record tempLeft, tempRight;

@@ -299,9 +299,7 @@ void q6 () {
 
 	Attribute sumatt[] = {ps_supplycost, s_nationkey};
 	Schema sum_sch ("sum_sch", 2, sumatt);
-	Function func1;
-    get_cnf (str_sum, &sum_sch, func1);
-	int cnt = clear_pipe (_out, &sum_sch, func1, true);
+	int cnt = clear_pipe (_out, &sum_sch, true);
 	cout << " query6 returned sum for " << cnt << " groups (expected 25 groups)\n";
 }
 

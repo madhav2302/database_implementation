@@ -186,35 +186,14 @@ void *Join::ThreadMethod(void *d) {
     OrderMaker right;
     data->selOp->GetSortOrders(left, right);
 
-    SortInfo leftSortInfo(&left, data->runLen);
-
-    GenericDBFile *leftData = new SortedDBFile();
-    leftData->Create("tmp_left_sorted.tmp", sorted, &leftSortInfo);
-
-    while (data->inPipeL->Remove(&tempLeft)) {
-        leftData->Add(tempLeft);
-    }
-
-    leftData->MoveFirst();
-
-    GenericDBFile *rightData = new SortedDBFile();
-    SortInfo rightSortInfo(&right, data->runLen);
-    rightData->Create("tmp_right_sorted.tmp", sorted, &rightSortInfo);
-
-    while (data->inPipeR->Remove(&tempRight)) {
-        rightData->Add(tempRight);
-    }
-
-    rightData->MoveFirst();
+    Pipe leftData(100), rightData(100);
+    BigQ bigQL(*data->inPipeL, leftData, left, data->runLen), bigQR(*data->inPipeR, rightData, right, data->runLen);
 
     int *attsToKeep = nullptr;
     int rightIsPresent = 0;
 
-    int count = 0;
-
-    while (leftData->GetNext(tempLeft)) {
-        count++;
-        while (rightIsPresent || rightData->GetNext(tempRight)) {
+    while (leftData.Remove(&tempLeft)) {
+        while (rightIsPresent || rightData.Remove(&tempRight)) {
             int comparisionResult = comp.Compare(&tempLeft, &left, &tempRight, &right);
 
             if (comparisionResult == 0) {
@@ -243,19 +222,7 @@ void *Join::ThreadMethod(void *d) {
             }
             rightIsPresent = 0;
         }
-
-        if (count % 10000 == 0) {
-            cout << "Completed : " << count << " records.\n";
-        }
     }
-
-    leftData->Close();
-    rightData->Close();
-
-    remove("tmp_right_sorted.tmp");
-    remove("tmp_right_sorted.tmp.metadata");
-    remove("tmp_left_sorted.tmp");
-    remove("tmp_left_sorted.tmp.metadata");
 
     data->outPipe->ShutDown();
     return nullptr;

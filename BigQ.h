@@ -126,7 +126,7 @@ struct CustomRecordCompare {
 static std::string randomFileName() {
     time_t result = time(nullptr);
     std::stringstream ss;
-    ss << result;
+    ss << result << "_" << pthread_self();
     return "tmp" + ss.str() + ".bin";
 }
 

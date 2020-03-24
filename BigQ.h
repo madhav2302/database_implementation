@@ -74,6 +74,7 @@ class RecordWrapper;
 /**
  * It is wrapper for maintaining run for the phase 2 priority queue.
  */
+ // TODO : Move out as own class
 class SingleRun {
 private:
     int startPage;
@@ -82,11 +83,13 @@ private:
     Page *page = new Page();
     File *file;
 public:
-    SingleRun(File *file, int startPage, int endPage);
+    SingleRun(File *file, int runLen, int currentRunNumber);
 
     ~SingleRun();
 
     int GetFirst(RecordWrapper *firstOne);
+
+    int GetFirst(Record *firstOne);
 };
 
 /**
@@ -126,7 +129,7 @@ struct CustomRecordCompare {
 static std::string randomFileName() {
     time_t result = time(nullptr);
     std::stringstream ss;
-    ss << result;
+    ss << result << "_" << pthread_self();
     return "tmp" + ss.str() + ".bin";
 }
 

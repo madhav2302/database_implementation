@@ -17,9 +17,13 @@ rsync ${PARAM} \
   --exclude='*.o' \
   --exclude='*.bin.*' \
   --exclude='*.out' \
-  --exclude='lex.yy.c' \
+  --exclude='lex.yy.*' \
+  --exclude='lex.yyfunc.*' \
   --exclude='y.tab.*' \
+  --exclude='yyfunc.tab.*' \
   --exclude='main' \
+  --exclude='test.cat' \
+  --exclude='ps.w.tmp' \
   ./ msodhani@storm.cise.ufl.edu:~/database_implementation/
 #make main
 #make a1test.out

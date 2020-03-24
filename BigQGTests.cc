@@ -83,7 +83,7 @@ OrderMaker *orderMaker = new OrderMaker(rschema);
 
 SortSingleRunData(file, pages, orderMaker, 10, 0);
 
-SingleRun *run = new SingleRun(file, 0, 0);
+SingleRun *run = new SingleRun(file, 10, 0);
 
 // Act
 RecordWrapper *wrapper = new RecordWrapper(0);

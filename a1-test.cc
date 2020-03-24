@@ -15,7 +15,7 @@ const char *dbfile_dir = ""; // dir where binary heap files should be stored
 // dir where dbgen tpch files (extension *.tbl) can be found
 //"/home/kaushik/Desktop/tpch_ten_GB/tpch-dbgen/";
 const char *tpch_dir = (fileExists() ? "/cise/homes/msodhani/tpch-dbgen/"
-                                   : "/Users/backup/projects/cpp/mock_data/");
+                                   : "/Users/backup/projects/cpp/mock_data_1gb/");
 //const char *tpch_dir = "/home/kaushik/Documents/tpch/tpch-dbgen/";
 char *catalog_path = "catalog"; // full path of the catalog file
 
@@ -91,7 +91,7 @@ int main() {
     setup(catalog_path, dbfile_dir, tpch_dir);
 
     void (*test)();
-    relation *rel_ptr[] = {n, r, c, p, ps, o, li};
+    relation *rel_ptr[] = {n, r, c, p, ps, o, li, s};
     void (*test_ptr[])() = {&test1, &test2, &test3};
 
     int tindx = 0;
@@ -104,7 +104,7 @@ int main() {
     }
 
     int findx = 0;
-    while (findx < 1 || findx > 7) {
+    while (findx < 1 || findx > 8) {
         cout << "\n select table: \n";
         cout << "\t 1. nation \n";
         cout << "\t 2. region \n";
@@ -112,7 +112,8 @@ int main() {
         cout << "\t 4. part \n";
         cout << "\t 5. partsupp \n";
         cout << "\t 6. orders \n";
-        cout << "\t 7. lineitem \n \t ";
+        cout << "\t 7. lineitem \n";
+        cout << "\t 8. supplier \n \t ";
         cin >> findx;
     }
 

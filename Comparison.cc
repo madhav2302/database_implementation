@@ -117,25 +117,15 @@ void OrderMaker :: Print () {
 	}
 }
 
-int OrderMaker::getNumAtts() {
-    return numAtts;
-}
+void OrderMaker::AddOrder(int whichAtt, Type whichType) {
+    if (numAtts == MAX_ANDS) {
+        cerr << "Maximum orders can be : " << MAX_ANDS << '\n';
+        exit(1);
+    }
 
-void OrderMaker::setNumAtts(int numAtts) {
-    this->numAtts = numAtts;
-}
-
-int OrderMaker::getWhichAtts(int index)  {
-    return whichAtts[index];
-}
-void OrderMaker::setWhichAtts(int index, int value) {
-    whichAtts[index] = value;
-}
-Type OrderMaker::getWhichTypes(int index) {
-    return whichTypes[index];
-}
-void OrderMaker::setWhichTypes(int index, Type type) {
-    whichTypes[index] = type;
+    whichAtts[numAtts] = whichAtt;
+    whichTypes[numAtts] = whichType;
+    numAtts++;
 }
 
 void CNF::GetSortOrder(OrderMaker &sortOrder, OrderMaker &query) {

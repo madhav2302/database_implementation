@@ -40,7 +40,7 @@ int SortedDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
         query = new OrderMaker();
         cnf.GetSortOrder(*(sortInfo->myOrder), *query);
 
-        readCursor = query->getNumAtts() > 0 ? PerformBinarySearch(cnf, literal) : 0;
+        readCursor = query->numAtts > 0 ? PerformBinarySearch(cnf, literal) : 0;
         page->EmptyItOut();
         queryInitialized = true;
     }
@@ -52,7 +52,7 @@ int SortedDBFile::GetNext(Record &fetchme, CNF &cnf, Record &literal) {
         if (recordAvailable == 1) {
             if (comp.Compare(&fetchme, &literal, &cnf)) return 1;
             // We don't need to scan records if we have some common query and record in file is greater than the query
-            if (query->getNumAtts() > 0 && comp.Compare(&literal, query, &fetchme, sortInfo->myOrder) < 0) {
+            if (query->numAtts > 0 && comp.Compare(&literal, query, &fetchme, sortInfo->myOrder) < 0) {
                 page->EmptyItOut();
                 readCursor = file->GetLength();
             }
@@ -135,17 +135,17 @@ void SortedDBFile::FlushPage() {
 }
 
 void SortedDBFile::WriteMetadata(const char *fpath, fType file_type, void *startup) {
-    SortInfo *startUpSortInfo = (SortInfo *) startup;
+    auto *startUpSortInfo = (SortInfo *) startup;
     ofstream metadata(fpath + std::string(".metadata"));
     if (metadata.is_open()) {
         // Write File Type
         metadata << file_type << '\n';
 
         metadata << startUpSortInfo->runLength << '\n';
-        metadata << startUpSortInfo->myOrder->getNumAtts() << '\n';
-        for (int index = 0; index < startUpSortInfo->myOrder->getNumAtts(); index++) {
-            metadata << startUpSortInfo->myOrder->getWhichAtts(index) << '\n';
-            metadata << startUpSortInfo->myOrder->getWhichTypes(index) << '\n';
+        metadata << startUpSortInfo->myOrder->numAtts << '\n';
+        for (int index = 0; index < startUpSortInfo->myOrder->numAtts; index++) {
+            metadata << startUpSortInfo->myOrder->whichAtts[index] << '\n';
+            metadata << startUpSortInfo->myOrder->whichTypes[index] << '\n';
         }
         metadata << '\n';
         metadata.close();
@@ -156,7 +156,7 @@ void SortedDBFile::WriteMetadata(const char *fpath, fType file_type, void *start
 }
 
 void SortedDBFile::ReadMetadata(const char *fpath) {
-    OrderMaker *orderMaker = new OrderMaker();
+    auto *orderMaker = new OrderMaker();
     this->sortInfo = new SortInfo(orderMaker, 0);
     string line;
     ifstream metadata_read(fpath + std::string(".metadata"));
@@ -167,16 +167,14 @@ void SortedDBFile::ReadMetadata(const char *fpath) {
         getline(metadata_read, line);
         this->sortInfo->runLength = std::stoi(line);
         getline(metadata_read, line);
-        int numAtts = std::stoi(line);
 
-        this->sortInfo->myOrder->setNumAtts(numAtts);
+        for (int index = 0; index < std::stoi(line); index++) {
+            string att;
+            getline(metadata_read, att);
 
-        for (int index = 0; index < numAtts; index++) {
-            getline(metadata_read, line);
-            this->sortInfo->myOrder->setWhichAtts(index, stoi(line));
-
-            getline(metadata_read, line);
-            this->sortInfo->myOrder->setWhichTypes(index, (Type) stoi(line));
+            string type;
+            getline(metadata_read, type);
+            sortInfo->myOrder->AddOrder(stoi(att), (Type) stoi(type));
         }
         metadata_read.close();
     } else {

@@ -18,16 +18,10 @@ void *TPMMS(void *data) {
 
     File *file = new File();
     std::string fileName = Init(file);
-//    cout << "BigQ INIT complete, using " << fileName << '\n';
 
     Phase1(file, threadData->in, threadData->sortorder, threadData->runlen);
-//    cout << "Phase 1 complete\n";
-
     Phase2(file, threadData->out, threadData->sortorder, threadData->runlen);
-//    cout << "Phase 2 complete\n";
-
     Finish(file, fileName, threadData->out);
-//    cout << "BigQ Finished\n";
 
     delete file;
     return nullptr;
@@ -125,18 +119,14 @@ void Phase2(File *file, Pipe &out, OrderMaker &sortorder, int runlen) {
     int numberOfRuns = std::ceil((file->GetLength() - 1) / (double) runlen);
 
     SingleRun *runs[numberOfRuns];
-
-    for (int i = 0; i < numberOfRuns; i++) {
-        runs[i] = new SingleRun(file, runlen * i, std::min((off_t) (runlen * (i + 1)) - 1, file->GetLength() - 2));
-    }
+    for (int runNumber = 0; runNumber < numberOfRuns; runNumber++)
+        runs[runNumber] = new SingleRun(file, runlen, runNumber);
 
     std::priority_queue<RecordWrapper *, vector<RecordWrapper *>, CustomRecordCompare> pqueue(&sortorder);
 
     for (int i = 0; i < numberOfRuns; i++) {
         RecordWrapper *recordWrapperTemp = new RecordWrapper(i);
-        if (runs[i]->GetFirst(recordWrapperTemp) == 1) {
-            pqueue.push(recordWrapperTemp);
-        }
+        if (runs[i]->GetFirst(recordWrapperTemp) == 1) pqueue.push(recordWrapperTemp);
     }
 
     while (!pqueue.empty()) {
@@ -145,9 +135,7 @@ void Phase2(File *file, Pipe &out, OrderMaker &sortorder, int runlen) {
         pqueue.pop();
 
         RecordWrapper *recordWrapperTemp = new RecordWrapper(r->runArrayIndex);
-        if (runs[r->runArrayIndex]->GetFirst(recordWrapperTemp) == 1) {
-            pqueue.push(recordWrapperTemp);
-        }
+        if (runs[r->runArrayIndex]->GetFirst(recordWrapperTemp) == 1) pqueue.push(recordWrapperTemp);
     }
 }
 
@@ -164,10 +152,10 @@ void Finish(File *file, std::string fileName, Pipe &out) {
 BigQ::~BigQ() {};
 
 
-SingleRun::SingleRun(File *file, int startPage, int endPage) {
+SingleRun::SingleRun(File *file, int runLen, int currentRunNumber) {
     this->file = file;
-    this->startPage = startPage;
-    this->endPage = endPage;
+    this->startPage = runLen * currentRunNumber;
+    this->endPage = std::min((off_t) (runLen * (currentRunNumber + 1)) - 1, file->GetLength() - 2);
 }
 
 SingleRun::~SingleRun() {
@@ -175,11 +163,15 @@ SingleRun::~SingleRun() {
 }
 
 int SingleRun::GetFirst(RecordWrapper *wrapper) {
-    if (page->GetFirst(wrapper->firstOne) != 1) {
+    return GetFirst(wrapper->firstOne);
+}
+
+int SingleRun::GetFirst(Record *firstOne) {
+    if (page->GetFirst(firstOne) != 1) {
         if (startPage > endPage) return 0;
 
         file->GetPage(page, startPage++);
-        return page->GetFirst(wrapper->firstOne);
+        return page->GetFirst(firstOne);
     }
     return 1;
 }

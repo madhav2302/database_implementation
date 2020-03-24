@@ -303,40 +303,82 @@ void q6 () {
 	cout << " query6 returned sum for " << cnt << " groups (expected 25 groups)\n";
 }
 
-void q7 () {
-/*
-select sum(ps_supplycost)
+/**
+ * select sum(ps_supplycost)
 from part, supplier, partsupp
 where p_partkey = ps_partkey and
 s_suppkey = ps_suppkey and
 s_acctbal > 2500;
 
-ANSWER: 274251601.96 (5.91 sec)
+ ANSWER: 274251601.96 -> 2.74252e+08
+ */
+void q7 () {
+    Attribute p_partkey = {"p_partkey", Int};
+    Attribute ps_partkey = {"ps_partkey", Int};
+    Attribute s_suppkey = {"s_suppkey", Int};
+    Attribute ps_suppkey = {"ps_suppkey", Int};
+    Attribute ps_supplycost = {"ps_supplycost", Double};
+    Attribute s_acctbal = {"s_acctbal", Double};
+    Attribute joinatt1[] = {p_partkey, SA, SA, SA, SA, IA, SA, DA, SA, ps_partkey, ps_suppkey, IA, ps_supplycost, SA};
+    Schema join_sch1("join_sch1", pAtts + psAtts, joinatt1);
 
-possible plan:
-	SF(s_acctbal > 2500) => _s
-	SF(p_partkey = p_partkey) => _p 
-	SF(ps_partkey = ps_partkey) => _ps  
-	On records from pipes _p and _ps: 
-		J(p_partkey = ps_partkey) => _p_ps
-	On _s and _p_ps: 
-		J(s_suppkey = ps_suppkey) => _s_p_ps
-	On _s_p_ps:
-		S(s_supplycost) => __s_p_ps
-	On __s_p_ps:
-		W(__s_p_ps)
+    Attribute joinatt2[] = {s_suppkey, SA, SA, IA, SA, s_acctbal, SA, p_partkey, SA, SA, SA, SA, IA, SA, DA, SA, ps_partkey,
+                            ps_suppkey, IA, ps_supplycost, SA};
+    Schema join_sch2("join_sch2", sAtts+ pAtts + psAtts, joinatt2);
 
-Legend:
-SF : select all records that satisfy some simple cnf expr over recs from in_file 
-SP: same as SF but recs come from in_pipe
-J: select all records (from left_pipe x right_pipe) that satisfy a cnf expression
-P: project some atts from in-pipe
-T: apply some aggregate function
-G: same as T but do it over each group identified by ordermaker
-D: stuff only distinct records into the out_pipe discarding duplicates
-W: write out records from in_pipe to a file using out_schema
-*/
-	cout << " TBA\n";
+    cout << " query7 \n";
+    char *pred_s = "(s_suppkey = s_suppkey)";
+    init_SF_s(pred_s, 100);
+    SF_s.Run(dbf_s, _s, cnf_s, lit_s);
+
+    char *pred_ps = "(ps_suppkey = ps_suppkey)";
+    init_SF_ps(pred_ps, 100);
+    SF_ps.Run(dbf_ps, _ps, cnf_ps, lit_ps);
+
+    char *pred_p = "(p_partkey = p_partkey)";
+    init_SF_p(pred_p, 100);
+    SF_p.Run(dbf_p, _p, cnf_p, lit_p);
+
+    Pipe _p_ps(pipesz);
+    Join J1;
+    CNF cnf_p_ps;
+    Record lit_p_ps;
+    get_cnf("(p_partkey = ps_partkey)", p->schema(), ps->schema(), cnf_p_ps, lit_p_ps);
+
+    Pipe _s_p_ps(pipesz);
+    Join J2;
+    CNF cnf_s_p_ps;
+    Record lit_s_p_ps;
+    get_cnf("(s_suppkey = ps_suppkey)", s->schema(), &join_sch1, cnf_s_p_ps, lit_s_p_ps);
+
+    Pipe __s_p_ps(pipesz);
+    SelectPipe SP;
+    CNF cnf__s_p_ps;
+    Record lit__s_p_ps;
+    get_cnf("(s_acctbal > 2500.0)", &join_sch2, cnf__s_p_ps, lit__s_p_ps);
+
+    Pipe ___s_p_ps(pipesz);
+    Sum T;
+    Function func;
+    char *str_sum = "(ps_supplycost)";
+    get_cnf (str_sum, &join_sch2, func);
+
+    J1.Run(_p, _ps, _p_ps, cnf_p_ps, lit_p_ps);
+    J2.Run(_s, _p_ps, _s_p_ps, cnf_s_p_ps, lit_s_p_ps);
+    SP.Run(_s_p_ps, __s_p_ps, cnf__s_p_ps, lit__s_p_ps);
+    T.Run(__s_p_ps, ___s_p_ps, func);
+
+    SF_p.WaitUntilDone();
+    SF_ps.WaitUntilDone();
+    SF_s.WaitUntilDone();
+    J1.WaitUntilDone();
+    J2.WaitUntilDone();
+    SP.WaitUntilDone();
+    T.WaitUntilDone();
+
+    Attribute sum_att[] = {DA};
+    Schema sum_sch("sum_sch", 1, sum_att);
+    clear_pipe(___s_p_ps, &sum_sch, true);
 }
 
 void q8 () {

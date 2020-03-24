@@ -1,8 +1,7 @@
 #include "RelOp.h"
 #include "RelOpStructs.h"
-#include <iostream>
 #include "BigQ.h"
-#include "SortedDBFile.h"
+#include <cmath>
 
 void RelationalOp::WaitUntilDone() {
     pthread_join(thread, nullptr);
@@ -176,24 +175,85 @@ void Join::Run(Pipe &inPipeL, Pipe &inPipeR, Pipe &outPipe, CNF &selOp, Record &
     pthread_create(&thread, nullptr, ThreadMethod, (void *) data);
 }
 
-void *Join::ThreadMethod(void *d) {
-    auto *data = (RelOpJoinData *) d;
+void writeToFile(std::string fileName, Pipe *pipe) {
+    File file;
+    file.Open(0, const_cast<char *>(fileName.c_str()));
+    int whichPage = 0;
+    Page page;
+    Record temp;
+    int count = 0;
+    while (pipe->Remove(&temp)) {
+        count++;
+        if (!page.Append(&temp)) {
+            file.AddPage(&page, whichPage++);
+            page.EmptyItOut();
+            page.Append(&temp);
+        }
+    }
+
+    cerr << "Wrote " << count << " for " << fileName << '\n';
+
+    file.AddPage(&page, whichPage++);
+    file.Close();
+}
+
+void NestedBlockJoin(Pipe *pipeL, Pipe *pipeR, int runlen, Pipe *out) {
+    std::string fileNameL = "tmp_file_l_" + randomFileName(), fileNameR = "tmp_file_r_" + randomFileName();
+    writeToFile(fileNameL, pipeL);
+    writeToFile(fileNameR, pipeR);
+
+    File outer, inner;
+    outer.Open(1, const_cast<char *>(fileNameL.c_str()));
+    inner.Open(1, const_cast<char *> (fileNameR.c_str()));
+
+    int leftCount = -1, rightCount = -1;
+    int *attsToKeep = nullptr;
+
+    for (int outerBlockNumber = 0;
+         outerBlockNumber < std::ceil((outer.GetLength() - 1) / (double) runlen); outerBlockNumber++) {
+        cerr << "outer run " << outerBlockNumber << '\n';
+        for (int innerBlockNumber = 0;
+             innerBlockNumber < std::ceil((inner.GetLength() - 1) / (double) runlen); innerBlockNumber++) {
+            cerr << "inner run " << innerBlockNumber << '\n';
+            SingleRun outerBlock(&outer, runlen, outerBlockNumber);
+            Record outerRecord, innerRecord, mergeRecord;
+            while (outerBlock.GetFirst(&outerRecord)) {
+                SingleRun innerBlock(&inner, runlen, innerBlockNumber);
+                while (innerBlock.GetFirst(&innerRecord)) {
+                    if (attsToKeep == nullptr) {
+                        leftCount = outerRecord.NumberOfAtts();
+                        rightCount = innerRecord.NumberOfAtts();
+                        attsToKeep = new int[leftCount + rightCount];
+                        int indexInArray = 0;
+                        for (int i = 0; i < leftCount; i++) attsToKeep[indexInArray++] = i;
+                        for (int i = 0; i < rightCount; i++) attsToKeep[indexInArray++] = i;
+                    }
+
+                    mergeRecord.MergeRecords(&outerRecord, &innerRecord, leftCount, rightCount, attsToKeep,
+                                             leftCount + rightCount,
+                                             leftCount);
+                    out->Insert(&mergeRecord);
+                }
+            }
+        }
+    }
+
+    outer.Close();
+    inner.Close();
+    remove(fileNameL.c_str());
+    remove(fileNameR.c_str());
+}
+
+void ComparisonBasedJoin(Pipe *pipeL, Pipe *pipeR, OrderMaker *orderL, OrderMaker *orderR, Pipe *out) {
     ComparisonEngine comp;
     Record tempLeft, tempRight;
-
-    OrderMaker left, right;
-    data->selOp->GetSortOrders(left, right);
-
-    Pipe leftData(100), rightData(100);
-    BigQ bigQL(*data->inPipeL, leftData, left, data->runLen), bigQR(*data->inPipeR, rightData, right, data->runLen);
-
     int *attsToKeep = nullptr;
     int rightIsPresent = 0;
     int leftCount = -1, rightCount = -1;
 
-    while (leftData.Remove(&tempLeft)) {
-        while (rightIsPresent || rightData.Remove(&tempRight)) {
-            int comparisionResult = comp.Compare(&tempLeft, &left, &tempRight, &right);
+    while (pipeL->Remove(&tempLeft)) {
+        while (rightIsPresent || pipeR->Remove(&tempRight)) {
+            int comparisionResult = comp.Compare(&tempLeft, orderL, &tempRight, orderR);
 
             if (comparisionResult == 0) {
                 if (attsToKeep == nullptr) {
@@ -208,7 +268,7 @@ void *Join::ThreadMethod(void *d) {
                 Record tempMerge;
                 tempMerge.MergeRecords(&tempLeft, &tempRight, leftCount, rightCount, attsToKeep, leftCount + rightCount,
                                        leftCount);
-                data->outPipe->Insert(&tempMerge);
+                out->Insert(&tempMerge);
             } else if (comparisionResult < 0) {
                 rightIsPresent = 1;
                 break;
@@ -216,6 +276,19 @@ void *Join::ThreadMethod(void *d) {
             rightIsPresent = 0;
         }
     }
+}
+
+void *Join::ThreadMethod(void *d) {
+    auto *data = (RelOpJoinData *) d;
+
+    OrderMaker left, right;
+    data->selOp->GetSortOrders(left, right);
+
+    Pipe leftData(100), rightData(100);
+    BigQ bigQL(*data->inPipeL, leftData, left, data->runLen), bigQR(*data->inPipeR, rightData, right, data->runLen);
+
+    if (left.numAtts == 0) NestedBlockJoin(&leftData, &rightData, data->runLen, data->outPipe);
+    else ComparisonBasedJoin(&leftData, &rightData, &left, &right, data->outPipe);
 
     data->outPipe->ShutDown();
     return nullptr;

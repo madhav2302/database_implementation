@@ -163,11 +163,15 @@ SingleRun::~SingleRun() {
 }
 
 int SingleRun::GetFirst(RecordWrapper *wrapper) {
-    if (page->GetFirst(wrapper->firstOne) != 1) {
+    return GetFirst(wrapper->firstOne);
+}
+
+int SingleRun::GetFirst(Record *firstOne) {
+    if (page->GetFirst(firstOne) != 1) {
         if (startPage > endPage) return 0;
 
         file->GetPage(page, startPage++);
-        return page->GetFirst(wrapper->firstOne);
+        return page->GetFirst(firstOne);
     }
     return 1;
 }

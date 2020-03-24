@@ -278,7 +278,6 @@ void q6 () {
 	Attribute joinatt[] = {IA,SA,SA,s_nationkey,SA,DA,SA,IA,IA,IA,ps_supplycost,SA};
 	Schema join_sch ("join_sch", outAtts, joinatt);
 
-	// TODO : Confirm below details
 	GroupBy G;
 		// _s (input pipe)
 		Pipe _out (100);
@@ -300,7 +299,9 @@ void q6 () {
 
 	Attribute sumatt[] = {ps_supplycost, s_nationkey};
 	Schema sum_sch ("sum_sch", 2, sumatt);
-	int cnt = clear_pipe (_out, &sum_sch, true);
+	Function func1;
+    get_cnf (str_sum, &sum_sch, func1);
+	int cnt = clear_pipe (_out, &sum_sch, func1, true);
 	cout << " query6 returned sum for " << cnt << " groups (expected 25 groups)\n";
 }
 

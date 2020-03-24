@@ -53,7 +53,7 @@ void *consumer (void *arg) {
 		last = &rec[i%2];
 
 		if (prev && last) {
-			if (ceng.Compare (prev, last, t->order) == 1) {
+			if (ceng.Compare (prev, last, t->order) > 1) {
 				err++;
 			}
 			if (t->write) {

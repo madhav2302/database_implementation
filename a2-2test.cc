@@ -73,7 +73,7 @@ void testOrder(OrderMaker *orderMaker) {
         last = &rec[i%2];
 
         if (prev && last) {
-            if (ceng.Compare (prev, last, orderMaker) == 1) {
+            if (ceng.Compare (prev, last, orderMaker) > 1) {
                 err++;
             }
         }

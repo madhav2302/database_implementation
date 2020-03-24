@@ -24,7 +24,7 @@ const bool runningOnServer(fileExists());
 // It can be remove if needed depending on how the tests will be running.
 
 const std::string g_serverPath("/cise/homes/msodhani/mock_data/");
-const std::string g_localPath("/Users/madhavsodhani/projects/cpp/mock_data/");
+const std::string g_localPath("/Users/backup/projects/cpp/mock_data/");
 
 
 int sizeOfFilePath(const std::string &tableName) {
@@ -88,7 +88,7 @@ void flushDataIntoFile() {
     int counter = 0;
     int whichPage = 0;
     File file;
-    file.Open(0, "/Users/madhavsodhani/projects/cpp/mock_data/testing");
+    file.Open(0, "/Users/backup/projects/cpp/mock_data/testing");
     Page page;
     bool flushedAtEnd = false;
     int numberOfRecordsInThePage = 0;

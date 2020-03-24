@@ -119,18 +119,14 @@ void Phase2(File *file, Pipe &out, OrderMaker &sortorder, int runlen) {
     int numberOfRuns = std::ceil((file->GetLength() - 1) / (double) runlen);
 
     SingleRun *runs[numberOfRuns];
-
-    for (int i = 0; i < numberOfRuns; i++) {
-        runs[i] = new SingleRun(file, runlen * i, std::min((off_t) (runlen * (i + 1)) - 1, file->GetLength() - 2));
-    }
+    for (int runNumber = 0; runNumber < numberOfRuns; runNumber++)
+        runs[runNumber] = new SingleRun(file, runlen, runNumber);
 
     std::priority_queue<RecordWrapper *, vector<RecordWrapper *>, CustomRecordCompare> pqueue(&sortorder);
 
     for (int i = 0; i < numberOfRuns; i++) {
         RecordWrapper *recordWrapperTemp = new RecordWrapper(i);
-        if (runs[i]->GetFirst(recordWrapperTemp) == 1) {
-            pqueue.push(recordWrapperTemp);
-        }
+        if (runs[i]->GetFirst(recordWrapperTemp) == 1) pqueue.push(recordWrapperTemp);
     }
 
     while (!pqueue.empty()) {
@@ -139,9 +135,7 @@ void Phase2(File *file, Pipe &out, OrderMaker &sortorder, int runlen) {
         pqueue.pop();
 
         RecordWrapper *recordWrapperTemp = new RecordWrapper(r->runArrayIndex);
-        if (runs[r->runArrayIndex]->GetFirst(recordWrapperTemp) == 1) {
-            pqueue.push(recordWrapperTemp);
-        }
+        if (runs[r->runArrayIndex]->GetFirst(recordWrapperTemp) == 1) pqueue.push(recordWrapperTemp);
     }
 }
 
@@ -158,10 +152,10 @@ void Finish(File *file, std::string fileName, Pipe &out) {
 BigQ::~BigQ() {};
 
 
-SingleRun::SingleRun(File *file, int startPage, int endPage) {
+SingleRun::SingleRun(File *file, int runLen, int currentRunNumber) {
     this->file = file;
-    this->startPage = startPage;
-    this->endPage = endPage;
+    this->startPage = runLen * currentRunNumber;
+    this->endPage = std::min((off_t) (runLen * (currentRunNumber + 1)) - 1, file->GetLength() - 2);
 }
 
 SingleRun::~SingleRun() {

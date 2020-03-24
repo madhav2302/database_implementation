@@ -179,11 +179,9 @@ void Join::Run(Pipe &inPipeL, Pipe &inPipeR, Pipe &outPipe, CNF &selOp, Record &
 void *Join::ThreadMethod(void *d) {
     auto *data = (RelOpJoinData *) d;
     ComparisonEngine comp;
-    Record tempLeft;
-    Record tempRight;
+    Record tempLeft, tempRight;
 
-    OrderMaker left;
-    OrderMaker right;
+    OrderMaker left, right;
     data->selOp->GetSortOrders(left, right);
 
     Pipe leftData(100), rightData(100);
@@ -191,25 +189,20 @@ void *Join::ThreadMethod(void *d) {
 
     int *attsToKeep = nullptr;
     int rightIsPresent = 0;
+    int leftCount = -1, rightCount = -1;
 
     while (leftData.Remove(&tempLeft)) {
         while (rightIsPresent || rightData.Remove(&tempRight)) {
             int comparisionResult = comp.Compare(&tempLeft, &left, &tempRight, &right);
 
             if (comparisionResult == 0) {
-                int leftCount = tempLeft.NumberOfAtts();
-                int rightCount = tempRight.NumberOfAtts();
-
                 if (attsToKeep == nullptr) {
+                    leftCount = tempLeft.NumberOfAtts();
+                    rightCount = tempRight.NumberOfAtts();
                     attsToKeep = new int[leftCount + rightCount];
                     int indexInArray = 0;
-                    for (int i = 0; i < leftCount; i++) {
-                        attsToKeep[indexInArray++] = i;
-                    }
-
-                    for (int i = 0; i < rightCount; i++) {
-                        attsToKeep[indexInArray++] = i;
-                    }
+                    for (int i = 0; i < leftCount; i++) attsToKeep[indexInArray++] = i;
+                    for (int i = 0; i < rightCount; i++) attsToKeep[indexInArray++] = i;
                 }
 
                 Record tempMerge;
@@ -268,11 +261,8 @@ void *GroupBy::ThreadMethod(void *d) {
         return nullptr;
     }
 
-    int intResult = 0;
-    double doubleResult = 0.0;
-
-    int tempIntResult;
-    double tempDoubleResult;
+    int intResult = 0, tempIntResult;
+    double doubleResult = 0.0, tempDoubleResult;
 
     while (tempPipe.Remove(&temp2)) {
         tempIntResult = 0;

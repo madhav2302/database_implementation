@@ -25,6 +25,9 @@ BigQGTests.out: $(CLASSES) BigQGTests.o
 SortedDBFileGTests.out : $(CLASSES) SortedDBFileGTests.o
 	$(CC) -o SortedDBFileGTests.out $(CLASSES) SortedDBFileGTests.o $(test_out_tag) -lpthread -lgtest
 
+RelOpGTests.out: $(CLASSES) RelOpGTests.o
+	$(CC) -o RelOpGTests.out $(CLASSES) RelOpGTests.o $(test_out_tag) -lpthread -lgtest
+
 ##### Assignment Tests ####
 
 test.out: $(CLASSES) test.o
@@ -44,6 +47,9 @@ HeapFileGTests.o: HeapFileGTests.cc
 
 BigQGTests.o: BigQGTests.cc
 	$(CC) -g -c BigQGTests.cc
+
+RelOpGTests.o: RelOpGTests.cc
+	$(CC) -g -c RelOpGTests.cc
 
 a2test.o: a2-test.cc
 	$(CC) -g -c a2-test.cc

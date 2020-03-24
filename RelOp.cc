@@ -175,7 +175,7 @@ void Join::Run(Pipe &inPipeL, Pipe &inPipeR, Pipe &outPipe, CNF &selOp, Record &
     pthread_create(&thread, nullptr, ThreadMethod, (void *) data);
 }
 
-void writeToFile(std::string fileName, Pipe *pipe) {
+void Join::writeToFile(std::string fileName, Pipe *pipe) {
     File file;
     file.Open(0, const_cast<char *>(fileName.c_str()));
     int whichPage = 0;
@@ -191,13 +191,11 @@ void writeToFile(std::string fileName, Pipe *pipe) {
         }
     }
 
-    cerr << "Wrote " << count << " for " << fileName << '\n';
-
     file.AddPage(&page, whichPage++);
     file.Close();
 }
 
-void NestedBlockJoin(Pipe *pipeL, Pipe *pipeR, int runlen, Pipe *out) {
+void Join::NestedBlockJoin(Pipe *pipeL, Pipe *pipeR, int runlen, Pipe *out) {
     Record *outerRecord = new Record(), *innerRecord = new Record(), mergeRecord;
     std::string fileNameL = "tmp_file_l_" + randomFileName(), fileNameR = "tmp_file_r_" + randomFileName();
     writeToFile(fileNameL, pipeL);
@@ -251,11 +249,12 @@ void NestedBlockJoin(Pipe *pipeL, Pipe *pipeR, int runlen, Pipe *out) {
     inner.Close();
     remove(fileNameL.c_str());
     remove(fileNameR.c_str());
+    out->ShutDown();
 }
 
 // TODO : Fix join if there are multiple records on first side of same values,
 // It will make miss records for second table
-void ComparisonBasedJoin(Pipe *pipeL, Pipe *pipeR, OrderMaker *orderL, OrderMaker *orderR, Pipe *out) {
+void Join::ComparisonBasedJoin(Pipe *pipeL, Pipe *pipeR, OrderMaker *orderL, OrderMaker *orderR, Pipe *out) {
     ComparisonEngine comp;
     Record tempLeft, tempRight;
     int *attsToKeep = nullptr;
@@ -287,6 +286,7 @@ void ComparisonBasedJoin(Pipe *pipeL, Pipe *pipeR, OrderMaker *orderL, OrderMake
             rightIsPresent = 0;
         }
     }
+    out->ShutDown();
 }
 
 void *Join::ThreadMethod(void *d) {
@@ -301,7 +301,6 @@ void *Join::ThreadMethod(void *d) {
     if (left.numAtts == 0) NestedBlockJoin(&leftData, &rightData, data->runLen, data->outPipe);
     else ComparisonBasedJoin(&leftData, &rightData, &left, &right, data->outPipe);
 
-    data->outPipe->ShutDown();
     return nullptr;
 }
 

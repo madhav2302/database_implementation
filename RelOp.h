@@ -46,6 +46,12 @@ class Join : public RelationalOp {
 public:
     void Run(Pipe &inPipeL, Pipe &inPipeR, Pipe &outPipe, CNF &selOp, Record &literal);
 
+    static void writeToFile(std::string fileName, Pipe *pipe);
+
+    static void NestedBlockJoin(Pipe *pipeL, Pipe *pipeR, int runlen, Pipe *out);
+
+    static void ComparisonBasedJoin(Pipe *pipeL, Pipe *pipeR, OrderMaker *orderL, OrderMaker *orderR, Pipe *out);
+
     static void *ThreadMethod(void *data);
 };
 

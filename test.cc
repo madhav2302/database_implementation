@@ -19,13 +19,12 @@ int add_data(FILE *src, int numrecs, int &res) {
 
     int proc = 0;
     int xx = 20000;
-    while (++proc < numrecs && (res = temp.SuckNextRecord(rel->schema(), src))) {
+    while (proc <= numrecs && (res = temp.SuckNextRecord(rel->schema(), src))) {
         dbfile.Add(temp);
         if (proc == xx) cerr << "\t ";
         if (proc % xx == 0) cerr << ".";
+        proc++;
     }
-
-    if (proc < numrecs) proc --;
 
     dbfile.Close();
     return proc;
@@ -72,11 +71,8 @@ void testOrder(OrderMaker *orderMaker) {
         prev = last;
         last = &rec[i%2];
 
-        if (prev && last) {
-            if (ceng.Compare (prev, last, orderMaker) == 1) {
-                err++;
-            }
-        }
+        if (prev && last && ceng.Compare(prev, last, orderMaker) > 0) err++;
+
         i++;
     }
 

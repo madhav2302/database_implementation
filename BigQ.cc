@@ -49,11 +49,24 @@ void Phase1(File *file, Pipe &in, OrderMaker &sortorder, int runlen) {
     vector<Page *> pages;
 
     while (in.Remove(temp)) {
-        if (pages.size() == runlen) writePage = SortSingleRunData(file, pages, &sortorder, runlen, writePage);
-
         if (!page->Append(temp)) {
             pages.push_back(page);
-            page = new Page();
+
+            if (pages.size() == runlen) {
+                writePage = SortSingleRunData(file, pages, &sortorder, runlen, writePage);
+
+                if (!pages.empty()) {
+                    page = pages.back();
+                    pages.pop_back();
+                } else {
+                    page = new Page();
+                }
+            } else {
+                page = new Page();
+            }
+
+            // TODO :: Handle case when page popped back from pages after sorting single run is full
+            // It will miss current record
             page->Append(temp);
         }
 

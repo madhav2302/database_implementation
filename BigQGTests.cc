@@ -10,7 +10,7 @@
 
 char *catalog_path = "catalog";
 char *nation_bin_file_name = "nation.bin";
-char *tpch_dir = "/Users/madhavsodhani/projects/cpp/mock_data/";
+char *tpch_dir = "/Users/backup/projects/cpp/mock_data/";
 
 bool fileExists(std::string fileName) {
     ifstream f(fileName.c_str());

@@ -106,4 +106,4 @@ clean:
 	rm -f y.tab.h
 	rm -f main
 	rm -f *tmp*.bin
-	rm -f *.bin*
+	#rm -f *.bin*

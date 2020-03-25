@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "Schema.h"
 #include "Pipe.h"
-#include "test.h"
+#include "a3-test.h"
 #include "RelOp.h"
 #include "RelOpStructs.h"
 #include "Comparison.h"

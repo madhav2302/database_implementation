@@ -3,7 +3,7 @@
 make clean
 make a2test.out
 
-./LoadEachTable.sh
+./runA1TestCases.sh
 
 echo "**************** TEST 1 ****************"
 ./a2test.out < tc1.txt | tail -n10 > output1.txt

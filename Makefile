@@ -1,7 +1,7 @@
 GTEST_CFLAGS = `pkg-config --cflags Google_tests`
 GTEST_LIBS = `pkg-config --libs Google_tests`
 CC = g++ -O2 -Wno-deprecated
-CLASSES = Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o GenericDBFile.o HeapDBFile.o SortedDBFile.o Pipe.o RelOp.o Function.o y.tab.o lex.yy.o yyfunc.tab.o lex.yyfunc.o
+CLASSES = Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o GenericDBFile.o HeapDBFile.o SortedDBFile.o Pipe.o RelOp.o Function.o Statistics.o y.tab.o lex.yy.o yyfunc.tab.o lex.yyfunc.o
 
 tag = -i
 test_out_tag = -ll
@@ -30,8 +30,11 @@ RelOpGTests.out: $(CLASSES) RelOpGTests.o
 
 ##### Assignment Tests ####
 
-test.out: $(CLASSES) test.o
-	$(CC) -o test.out $(CLASSES) test.o $(test_out_tag) -lpthread
+a4-1.out: $(CLASSES) a41-test.o
+	$(CC) -o a4-1.out $(CLASSES) a41-test.o $(test_out_tag) -lpthread
+
+a3-test.out: $(CLASSES) a3-test.o
+	$(CC) -o a3-test.out $(CLASSES) a3-test.o $(test_out_tag) -lpthread
 
 a2-2test.out: $(CLASSES) a2-2test.o
 	$(CC) -o a2-2test.out $(CLASSES) a2-2test.o $(test_out_tag) -lpthread
@@ -51,14 +54,17 @@ BigQGTests.o: BigQGTests.cc
 RelOpGTests.o: RelOpGTests.cc
 	$(CC) -g -c RelOpGTests.cc
 
+a41-test.o: a41-test.cc
+	$(CC) -g -c a41-test.cc
+
 a2test.o: a2-test.cc
 	$(CC) -g -c a2-test.cc
 
 a1-test.o: a1-test.cc
 	$(CC) -g -c a1-test.cc
 
-test.o: test.cc
-	$(CC) -g -c test.cc
+a3-test.o: a3-test.cc
+	$(CC) -g -c a3-test.cc
 
 a2-2test.o: a2-2test.cc
 	$(CC) -g -c a2-2test.cc
@@ -80,6 +86,9 @@ GenericDBFile.o: GenericDBFile.cc
 
 HeapDBFile.o: HeapDBFile.cc
 	$(CC) -g -c HeapDBFile.cc
+
+Statistics.o: Statistics.cc
+	$(CC) -g -c Statistics.cc
 
 SortedDBFile.o: SortedDBFile.cc
 	$(CC) -g -c SortedDBFile.cc

@@ -24,6 +24,9 @@ HeapFileGTests.out: $(CLASSES) HeapFileGTests.o
 BigQGTests.out: $(CLASSES) BigQGTests.o
 	$(CC) -o BigQGTests.out $(CLASSES) BigQGTests.o $(test_out_tag) -lpthread -lgtest
 
+QueryPlannerGTests.out: $(CLASSES_42_FOR_RULE) QueryPlannerGTests.o
+	$(CC) -o QueryPlannerGTests.out $(CLASSES_42) QueryPlannerGTests.o $(test_out_tag) -lpthread -lgtest
+
 SortedDBFileGTests.out : $(CLASSES) SortedDBFileGTests.o
 	$(CC) -o SortedDBFileGTests.out $(CLASSES) SortedDBFileGTests.o $(test_out_tag) -lpthread -lgtest
 
@@ -55,6 +58,9 @@ HeapFileGTests.o: HeapFileGTests.cc
 
 BigQGTests.o: BigQGTests.cc
 	$(CC) -g -c BigQGTests.cc
+
+QueryPlannerGTests.o: QueryPlannerGTests.cc
+	$(CC) -g -c QueryPlannerGTests.cc
 
 RelOpGTests.o: RelOpGTests.cc
 	$(CC) -g -c RelOpGTests.cc

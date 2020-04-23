@@ -35,9 +35,6 @@ private:
 
     int nextPipeId = 1;
 
-    // Load all the tables using SelectFile.
-    void SelectTables();
-
     // Split the AndList into selection and joins.
     void SplitJoinsAndFilters(unordered_map<string, AndList *> *tableSelectionAndList, vector<AndList *> *joins);
 
@@ -63,7 +60,13 @@ private:
 public:
     QueryPlanner(char *catalog_path, Statistics *statistics, QueryInput *query);
     ~QueryPlanner();
+
+    // Load all the tables using SelectFile.
+    void SelectTables();
+
     void Print();
+
+    unordered_map<string, RelOpNode *> GetGroupToRelOp();
 
 private:
     void MakeQueryPlan();

@@ -9,7 +9,8 @@ QueryPlanner::QueryPlanner(char *catalog_path, Statistics *statistics, QueryInpu
     this->statistics = statistics;
     this->queryInput = query;
 
-    MakeQueryPlan();
+    // For tests, we don't make query plan as statistics is null
+    if (statistics != nullptr) MakeQueryPlan();
 }
 
 QueryPlanner::~QueryPlanner() = default;
@@ -377,4 +378,8 @@ void QueryPlanner::PostOrderQueryPlan(RelOpNode *node) {
     PostOrderQueryPlan(node->child1);
     PostOrderQueryPlan(node->child2);
     node->Print();
-} 
+}
+
+unordered_map<string, RelOpNode *> QueryPlanner::GetGroupToRelOp() {
+    return groupToRelOp;
+}

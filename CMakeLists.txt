@@ -16,6 +16,4 @@ add_executable(database_implementation_a42_test a42-test.cc
         File.cc File.h Record.cc Record.h Schema.cc Schema.h
         TwoWayList.cc TwoWayList.h HeapDBFile.cc  HeapDBFile.h
         RelOp.cc RelOp.h Function.cc Function.h  SortedDBFile.cc SortedDBFile.h
-        y.tab.o lex.yy.c RelOpStructs.h Statistics.cc Statistics.h)
-
-
+        y.tab.o lex.yy.c RelOpStructs.h Statistics.cc Statistics.h QueryPlanner.cc QueryPlanner.h QueryPlannerNode.cc QueryPlannerNode.h)

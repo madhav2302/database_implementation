@@ -1,4 +1,3 @@
-#make clean
 echo "$#"
 
 PARAM="-anv"
@@ -25,9 +24,6 @@ rsync ${PARAM} \
   --exclude='test.cat' \
   --exclude='ps.w.tmp' \
   ./ msodhani@storm.cise.ufl.edu:~/database_implementation/
-#make main
-#make a1test.out
-#make test.out
 
 echo ""
 echo ""

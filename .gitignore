@@ -13,4 +13,7 @@
 /MakeEverything.sh
 /ps.w.tmp
 /output41.txt
+/output42.txt
 /Statistics.txt
+/output42_result.txt
+/CheckAfterRefactor.sh

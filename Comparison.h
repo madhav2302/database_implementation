@@ -58,6 +58,8 @@ public:
 	// based upon ALL of their attributes
 	OrderMaker(Schema *schema);
 
+    OrderMaker(Schema *schema, NameList *nameList);
+
 	// print to the screen
 	void Print ();
 

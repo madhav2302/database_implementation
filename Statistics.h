@@ -13,62 +13,58 @@
 
 using namespace std;
 
-struct Relation {
+struct StatisticsRelation {
 private:
-    double numOfTuples;
+    double numberOfTuples;
 
 public:
-    Relation() {
-        this->numOfTuples = 0;
+    StatisticsRelation() {
+        this->numberOfTuples = 0;
     }
 
-    Relation(double numOfTuples) {
-        this->numOfTuples = numOfTuples;
+    StatisticsRelation(double numOfTuples) {
+        this->numberOfTuples = numOfTuples;
     }
 
     double GetNumOfTuples() {
-        return numOfTuples;
+        return numberOfTuples;
     }
 
     void SetNumOfTuples(double n) {
-        this->numOfTuples = n;
+        this->numberOfTuples = n;
     }
 };
 
-struct Attribute {
+struct StatisticsAttribute {
 private:
-    int numOfDistinct;
+    int numberOfDistinct;
 
 public:
-    Attribute() {
-        this->numOfDistinct = 0;
+    StatisticsAttribute() {
+        this->numberOfDistinct = 0;
     }
 
-    Attribute(int numOfDistinct) {
-        this->numOfDistinct = numOfDistinct;
+    StatisticsAttribute(int numOfDistinct) {
+        this->numberOfDistinct = numOfDistinct;
     }
 
     int GetNumOfDistinct() {
-        return numOfDistinct;
-    }
-
-    void SetNumOfDistinct(int n) {
-        this->numOfDistinct = n;
+        return numberOfDistinct;
     }
 };
 
 class Statistics {
 
 private:
-    unordered_map<string, Relation> groupNameToRelationMap;
-    unordered_map<string, Attribute> attNameToAttributeMap;
-    unordered_map<string, unordered_set<string> > groupNameToSetOfRelationsMap;
-    unordered_map<string, string> relNameToGroupNameMap;
+    unordered_map<string, StatisticsRelation> groupToRelation;
+    unordered_map<string, StatisticsAttribute> nameToAttribute;
+    unordered_map<string, unordered_set<string> > groupNameToRelations;
+    unordered_map<string, string> relToGroup;
 
-    void PreProcessApply(struct AndList *parseTree, unordered_set<string> *relNames);
-    void ValidateApplyOnRelations(unordered_set<string> *relNames);
-    void PreProcessApplyOnAttributes(struct AndList *parseTree, unordered_set<string> *relNames);
-    void PreProcessNameOperand(Operand *operand, unordered_set<string> *relNames);
+    void ValidateApplyOnRelations(unordered_set<string> *relations);
+    void ApplyPreProcess(struct AndList *parseTree, unordered_set<string> *relations);
+    void ApplyOnAttributesPreProcess(struct AndList *parseTree, unordered_set<string> *relations);
+    void NameOperandPreProcess(Operand *operand, unordered_set<string> *relations);
 
 public:
     Statistics();
@@ -80,7 +76,6 @@ public:
     void AddRel(char *relName, int numTuples);
 
     void AddAtt(const string& relName, string attName, int numDistincts);
-//    void AddAtt(char *relName, char *attName, int numDistincts);
 
     void CopyRel(char *oldName, char *newName);
 
@@ -91,14 +86,6 @@ public:
     void Apply(struct AndList *parseTree, char *relNames[], int numToJoin);
 
     double Estimate(struct AndList *parseTree, char **relNames, int numToJoin);
-
-    unordered_map<string, Relation> *GetGroupNameToRelationMap();
-
-    unordered_map<string, Attribute>* GetAttNameToAttributeMap();
-
-    unordered_map<string, unordered_set<string> >* GetGroupNameToSetOfRelationsMap();
-
-    unordered_map<string, string>* GetRelNameToGroupNameMap();
 };
 
 #endif

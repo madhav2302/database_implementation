@@ -2,8 +2,8 @@ GTEST_CFLAGS = `pkg-config --cflags Google_tests`
 GTEST_LIBS = `pkg-config --libs Google_tests`
 CC = g++ -O2 -Wno-deprecated
 CLASSES = Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o GenericDBFile.o HeapDBFile.o SortedDBFile.o Pipe.o RelOp.o Function.o Statistics.o y.tab.o lex.yy.o yyfunc.tab.o lex.yyfunc.o
-CLASSES_42 = Statistics.o y.tab.o lex.yy.o
-CLASSES_42_FOR_RULE = Statistics.o y.tab_latest.o lex.yy_latest.o
+CLASSES_42 = QueryPlanner.o QueryPlannerNode.o Statistics.o Record.o Comparison.o Schema.o Function.o y.tab.o lex.yy.o
+CLASSES_42_FOR_RULE = QueryPlanner.o QueryPlannerNode.o Statistics.o Record.o Comparison.o Schema.o Function.o y.tab_latest.o lex.yy_latest.o
 
 tag = -i
 test_out_tag = -ll
@@ -32,8 +32,8 @@ RelOpGTests.out: $(CLASSES) RelOpGTests.o
 
 ##### Assignment Tests ####
 
-a4-2.out: $(CLASSES_42_FOR_RULE) a42-test.o
-	$(CC) -o a4-2.out $(CLASSES_42) a42-test.o $(test_out_tag)
+a42.out: $(CLASSES_42_FOR_RULE) a42-test.o
+	$(CC) -o a42.out $(CLASSES_42) a42-test.o $(test_out_tag)
 
 a4-1.out: $(CLASSES) a41-test.o
 	$(CC) -o a4-1.out $(CLASSES) a41-test.o $(test_out_tag) -lpthread
@@ -121,6 +121,12 @@ Record.o: Record.cc
 
 Schema.o: Schema.cc
 	$(CC) -g -c Schema.cc
+
+QueryPlanner.o: QueryPlanner.cc
+	$(CC) -g -c QueryPlanner.cc
+
+QueryPlannerNode.o: QueryPlannerNode.cc
+	$(CC) -g -c QueryPlannerNode.cc
 
 y.tab_latest.o: Parser_Latest.y
 	yacc -d Parser_Latest.y

@@ -2,6 +2,8 @@ GTEST_CFLAGS = `pkg-config --cflags Google_tests`
 GTEST_LIBS = `pkg-config --libs Google_tests`
 CC = g++ -O2 -Wno-deprecated
 CLASSES = Record.o Comparison.o ComparisonEngine.o Schema.o File.o BigQ.o DBFile.o GenericDBFile.o HeapDBFile.o SortedDBFile.o Pipe.o RelOp.o Function.o Statistics.o y.tab.o lex.yy.o yyfunc.tab.o lex.yyfunc.o
+CLASSES_42 = Statistics.o y.tab.o lex.yy.o
+CLASSES_42_FOR_RULE = Statistics.o y.tab_latest.o lex.yy_latest.o
 
 tag = -i
 test_out_tag = -ll
@@ -12,7 +14,7 @@ test_out_tag = -lfl
 endif
 
 main: $(CLASSES) main.o
-	$(CC) -o main $(CLASSES) main.o $(test_out_tag) -lpthread -lgtest
+	$(CC) -o main $(CLASSES) $(PARSING) main.o $(test_out_tag) -lpthread -lgtest
 
 ##### GTests #####
 
@@ -29,6 +31,9 @@ RelOpGTests.out: $(CLASSES) RelOpGTests.o
 	$(CC) -o RelOpGTests.out $(CLASSES) RelOpGTests.o $(test_out_tag) -lpthread -lgtest
 
 ##### Assignment Tests ####
+
+a4-2.out: $(CLASSES_42_FOR_RULE) a42-test.o
+	$(CC) -o a4-2.out $(CLASSES_42) a42-test.o $(test_out_tag)
 
 a4-1.out: $(CLASSES) a41-test.o
 	$(CC) -o a4-1.out $(CLASSES) a41-test.o $(test_out_tag) -lpthread
@@ -53,6 +58,9 @@ BigQGTests.o: BigQGTests.cc
 
 RelOpGTests.o: RelOpGTests.cc
 	$(CC) -g -c RelOpGTests.cc
+
+a42-test.o: a42-test.cc
+	$(CC) -g -c a42-test.cc
 
 a41-test.o: a41-test.cc
 	$(CC) -g -c a41-test.cc
@@ -113,6 +121,15 @@ Record.o: Record.cc
 
 Schema.o: Schema.cc
 	$(CC) -g -c Schema.cc
+
+y.tab_latest.o: Parser_Latest.y
+	yacc -d Parser_Latest.y
+	sed $(tag) -e "s/  __attribute__ ((__unused__))$$/# ifndef __cplusplus\n  __attribute__ ((__unused__));\n# endif/" y.tab.c
+	g++ -c y.tab.c
+
+lex.yy_latest.o: Lexer_Latest.l
+	lex  Lexer_Latest.l
+	gcc  -c lex.yy.c
 	
 y.tab.o: Parser.y
 	yacc -d Parser.y
@@ -142,4 +159,4 @@ clean:
 	rm -f lex.yyfunc*
 	rm -f main
 	rm -f *tmp*.*
-	#rm -f *.bin*
+	rm -f *.bin*

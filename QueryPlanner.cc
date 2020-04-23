@@ -46,6 +46,7 @@ void QueryPlanner::SumTuples() {
     sumNode->inputPipeId1 = inputRelOpNode->outputPipeId;
 
     sumNode->outputSchema = &sumSchema;
+    sumNode->outputPipeId = nextPipeId++;
 
     sumNode->computeMe = function;
     sumNode->distinctFunc = queryInput->distinctFunc;
@@ -366,6 +367,7 @@ string QueryPlanner::GetResultantGroupName() {
 }
 
 void QueryPlanner::Print() {
+    cout << "Print POST order traversal of tree:\n";
     PostOrderQueryPlan(groupToRelOp[GetResultantGroupName()]);
 }
 

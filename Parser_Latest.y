@@ -19,7 +19,10 @@
 	struct NameList *attsToSelect; // the set of attributes in the SELECT (NULL if no such atts)
 	int distinctAtts; // 1 if there is a DISTINCT in a non-aggregate query 
 	int distinctFunc;  // 1 if there is a DISTINCT in an aggregate query
-
+	struct ColumnList *myColumns; //
+	struct NameList *orderAtts; //
+	int operationCode;
+	char *fileName;
 %}
 
 // this stores all of the types returned by production rules
@@ -34,6 +37,7 @@
 	struct NameList *myNames;
 	char *actualChars;
 	char whichOne;
+	struct ColumnList *myColumns;
 }
 
 %token <actualChars> Name
@@ -50,6 +54,16 @@
 %token AS
 %token AND
 %token OR
+%token CREATE
+%token TABLE
+%token ON
+%token HEAP
+%token SORTED
+%token DROP
+%token SET
+%token OUTPUT
+%token INSERT
+%token INTO
 
 %type <myOrList> OrList
 %type <myAndList> AndList
@@ -61,6 +75,7 @@
 %type <myTables> Tables
 %type <myBoolOperand> Literal
 %type <myNames> Atts
+%type <myColumns> Columns
 
 %start SQL
 
@@ -79,6 +94,7 @@ SQL: SELECT WhatIWant FROM Tables WHERE AndList
 	tables = $4;
 	boolean = $6;	
 	groupingAtts = NULL;
+	operationCode = SELECT_OP;
 }
 
 | SELECT WhatIWant FROM Tables WHERE AndList GROUP BY Atts
@@ -86,7 +102,46 @@ SQL: SELECT WhatIWant FROM Tables WHERE AndList
 	tables = $4;
 	boolean = $6;	
 	groupingAtts = $9;
-};
+	operationCode = SELECT_OP;
+}
+
+| CREATE TABLE Tables '(' Columns ')' AS HEAP
+{
+	tables = $3;
+	orderAtts = NULL;
+	myColumns = $5;
+	operationCode = CREATE_OP;
+
+}
+
+| CREATE TABLE Tables '(' Columns ')' AS SORTED ON Atts
+{
+	tables = $3;
+	orderAtts = $10;
+	myColumns = $5;
+	operationCode = CREATE_OP;
+}
+
+
+| DROP TABLE Tables
+{
+	tables = $3;
+	operationCode = DROP_OP;
+}
+
+| SET OUTPUT Name
+{
+	fileName = $3;
+	operationCode = SET_OP;
+}
+| INSERT Name INTO Tables
+{
+	tables = $4;
+	fileName = $2;
+	operationCode = INSERT_OP;
+
+}
+;
 
 WhatIWant: Function ',' Atts 
 {
@@ -126,6 +181,23 @@ Function: SUM '(' CompoundExp ')'
 	finalFunction = $4;
 };
 
+
+Columns: Name Name
+{
+	$$ = (struct ColumnList *) malloc (sizeof (struct ColumnList));
+	$$->name = $1;
+	$$->type = $2;
+	$$->next = NULL;
+}
+
+| Name Name ',' Columns
+{
+	$$ = (struct ColumnList *) malloc (sizeof (struct ColumnList));
+	$$->name = $1;
+	$$->type = $2;
+	$$->next = $4;
+};
+
 Atts: Name
 {
 	$$ = (struct NameList *) malloc (sizeof (struct NameList));
@@ -133,11 +205,11 @@ Atts: Name
 	$$->next = NULL;
 } 
 
-| Atts ',' Name
+| Name ',' Atts
 {
 	$$ = (struct NameList *) malloc (sizeof (struct NameList));
-	$$->name = $3;
-	$$->next = $1;
+	$$->name = $1;
+	$$->next = $3;
 }
 
 Tables: Name AS Name 
@@ -146,6 +218,15 @@ Tables: Name AS Name
 	$$->tableName = $1;
 	$$->aliasAs = $3;
 	$$->next = NULL;
+}
+
+| Name
+{
+	$$ = (struct TableList *) malloc (sizeof (struct TableList));
+	$$->tableName = $1;
+	$$->aliasAs = "";
+	$$->next = NULL;
+
 }
 
 | Tables ',' Name AS Name

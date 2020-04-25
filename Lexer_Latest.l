@@ -55,6 +55,26 @@ void yyerror(char*s);
 
 "AS"			return(AS);
 
+"CREATE"        return (CREATE);
+
+"TABLE"         return (TABLE);
+
+"ON"            return (ON);
+
+"HEAP"          return (HEAP);
+
+"SORTED"          return (SORTED);
+
+"DROP"          return (DROP);
+
+"SET"          return (SET);
+
+"OUTPUT"          return (OUTPUT);
+
+"INSERT"          return (INSERT);
+
+"INTO"          return (INTO);
+
 "("			return('(');
 
 "<"                     return('<');

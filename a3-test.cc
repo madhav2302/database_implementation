@@ -149,7 +149,6 @@ void q3 () {
 		Function func;
 			char *str_sum = "(s_acctbal + (s_acctbal * 1.05))";
 			get_cnf (str_sum, s->schema (), func);
-			func.Print ();
 	T.Use_n_Pages (1);
 	SF_s.Run (dbf_s, _s, cnf_s, lit_s);
 	T.Run (_s, _out, func);
@@ -198,7 +197,6 @@ void q4 () {
 		Function func;
 			char *str_sum = "(ps_supplycost)";
 			get_cnf (str_sum, &join_sch, func);
-			func.Print ();
 	T.Use_n_Pages (1);
 
 	SF_ps.Run (dbf_ps, _ps, cnf_ps, lit_ps); // 161 recs qualified
@@ -284,7 +282,6 @@ void q6 () {
 		Function func;
 			char *str_sum = "(ps_supplycost)";
 			get_cnf (str_sum, &join_sch, func);
-			func.Print ();
 			OrderMaker grp_order;
             grp_order.AddOrder(3, Int);
 	G.Use_n_Pages (1);

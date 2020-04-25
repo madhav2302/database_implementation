@@ -38,6 +38,9 @@ RelOpGTests.out: $(CLASSES) RelOpGTests.o
 a42.out: $(CLASSES_42_FOR_RULE) a42-test.o
 	$(CC) -o a42.out $(CLASSES_42) a42-test.o $(test_out_tag)
 
+a5.out: $(CLASSES_42_FOR_RULE) a5-test.o
+	$(CC) -o a5.out $(CLASSES_42) a5-test.o $(test_out_tag)
+
 a4-1.out: $(CLASSES) a41-test.o
 	$(CC) -o a4-1.out $(CLASSES) a41-test.o $(test_out_tag) -lpthread
 
@@ -82,6 +85,9 @@ a3-test.o: a3-test.cc
 
 a2-2test.o: a2-2test.cc
 	$(CC) -g -c a2-2test.cc
+
+a5-test.o: a5-test.cc
+	$(CC) -g -c a5-test.cc
 
 main.o: main.cc
 	$(CC) -g -c main.cc

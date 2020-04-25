@@ -11,6 +11,12 @@
 #define GREATER_THAN 6
 #define EQUALS 7
 
+#define CREATE_OP 11
+#define INSERT_OP 12
+#define DROP_OP 13
+#define SET_OP 14
+#define SELECT_OP 15
+
 // used in computational (funcional) expressions
 struct FuncOperand {
 
@@ -52,6 +58,18 @@ struct NameList {
 
     // and this is the next name in the list
     struct NameList *next;
+};
+
+struct ColumnList {
+
+    // this is the name
+    char *name;
+
+
+    char *type;
+
+    // and this is the next name in the list
+    struct ColumnList *next;
 };
 
 // used in boolean expressions... there's no reason to have both this

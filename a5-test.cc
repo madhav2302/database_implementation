@@ -63,7 +63,8 @@ void test() {
 
 // CREATE TABLE mytable (att1 INTEGER, att2 DOUBLE, att3 STRING) AS HEAP
 // CREATE TABLE MYTABLE (att1 INTEGER, att2 DOUBLE, att3 STRING) AS SORTED ON att1, att2
-// INSERT output.txt INTO mytable
+// INSERT '/hello/output.txt' INTO mytable
+// SET OUTPUT '/hello/output.txt'
 int main() {
     if (yyparse() != 0) {
         cerr << "Some problem with yyparse\n";

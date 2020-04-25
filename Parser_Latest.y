@@ -134,12 +134,17 @@ SQL: SELECT WhatIWant FROM Tables WHERE AndList
 	fileName = $3;
 	operationCode = SET_OP;
 }
-| INSERT Name INTO Tables
+
+| SET OUTPUT String
+{
+	fileName = $3;
+	operationCode = SET_OP;
+}
+| INSERT String INTO Tables
 {
 	tables = $4;
 	fileName = $2;
 	operationCode = INSERT_OP;
-
 }
 ;
 

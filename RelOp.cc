@@ -5,6 +5,7 @@
 
 void RelationalOp::WaitUntilDone() {
     pthread_join(thread, nullptr);
+//    cerr << operation() << " Completed\n";
 }
 
 void RelationalOp::Use_n_Pages(int n) {
@@ -24,11 +25,20 @@ void *SelectFile::ThreadMethod(void *d) {
     auto *threadData = (RelOpSelectFileData *) d;
 
     Record temp;
-    while (threadData->inFile->GetNext(temp, *threadData->selOp, *threadData->literal))
-        threadData->outPipe->Insert(&temp);
+    if (threadData->selOp) {
+        while (threadData->inFile->GetNext(temp, *threadData->selOp, *threadData->literal))
+            threadData->outPipe->Insert(&temp);
+
+    } else {
+        while (threadData->inFile->GetNext(temp)) threadData->outPipe->Insert(&temp);
+    }
 
     threadData->outPipe->ShutDown();
     return nullptr;
+}
+
+string SelectFile::operation() {
+    return "SelecteFile";
 }
 
 void SelectPipe::Run(Pipe &inPipe, Pipe &outPipe, CNF &selOp, Record &literal) {
@@ -50,6 +60,10 @@ void *SelectPipe::ThreadMethod(void *data) {
     }
     threadData->outPipe->ShutDown();
     return nullptr;
+}
+
+string SelectPipe::operation() {
+    return "SelectPipe";
 }
 
 void Project::Run(Pipe &inPipe, Pipe &outPipe, int *keepMe, int numAttsInput, int numAttsOutput) {
@@ -75,19 +89,49 @@ void *Project::ThreadMethod(void *data) {
     return nullptr;
 }
 
-void Sum::Run(Pipe &inPipe, Pipe &outPipe, Function &computeMe) {
+string Project::operation() {
+    return "Project";
+}
+
+void Sum::Run(Pipe &inPipe, Pipe &outPipe, Function &computeMe, bool distinctFunc) {
     auto *data = new RelOpSumData();
     data->inPipe = &inPipe;
     data->outPipe = &outPipe;
     data->computeMe = &computeMe;
+    data->distinctFunc = distinctFunc;
     pthread_create(&thread, nullptr, ThreadMethod, (void *) data);
 }
 
-void *Sum::ThreadMethod(void *d) {
-    auto *data = (RelOpSumData *) d;
+void DistinctSum(RelOpSumData *data, Schema *outSchema) {
+    DuplicateRemoval duplicateRemoval;
+    Pipe *duplicateRemovalInPipe = new Pipe(100);
+    Pipe *duplicateRemovalOutPipe = new Pipe(100);
+    duplicateRemoval.Run(*duplicateRemovalInPipe, *duplicateRemovalOutPipe, *outSchema);
 
-    Type type = Int;
+    Record temp;
+    while (data->inPipe->Remove(&temp)) {
+        int tempIntResult = 0;
+        double tempDoubleResult = 0.0;
+        data->computeMe->Apply(temp, tempIntResult, tempDoubleResult);
 
+        std::string output = std::to_string(tempIntResult + tempDoubleResult) + "|";
+
+        temp.ComposeRecord(outSchema, const_cast<char *>(output.c_str()));
+        duplicateRemovalInPipe->Insert(&temp);
+    }
+    duplicateRemovalInPipe->ShutDown();
+
+    double result = 0.0;
+    while (duplicateRemovalOutPipe->Remove(&temp)) result += std::stod(temp.GetAtt(0, Double));
+
+    std::string output = std::to_string(result) + "|";
+
+    temp.ComposeRecord(outSchema, const_cast<char *>(output.c_str()));
+    data->outPipe->Insert(&temp);
+    data->outPipe->ShutDown();
+}
+
+void SimpleSum(RelOpSumData *data, Schema *outSchema) {
     int intResult = 0;
     double doubleResult = 0.0;
 
@@ -95,21 +139,32 @@ void *Sum::ThreadMethod(void *d) {
     while (data->inPipe->Remove(&temp)) {
         int tempIntResult = 0;
         double tempDoubleResult = 0.0;
-        Type resultType = data->computeMe->Apply(temp, tempIntResult, tempDoubleResult);
-        if (resultType == Double) type = Double;
+        data->computeMe->Apply(temp, tempIntResult, tempDoubleResult);
 
         intResult += tempIntResult;
         doubleResult += tempDoubleResult;
     }
 
-    std::string output = type == Int ? std::to_string(intResult) : std::to_string(intResult + doubleResult) + "|";
-    Attribute att = {"att1", type};
-    Schema outSchema("out_schema", 1, &att);
-    temp.ComposeRecord(&outSchema, const_cast<char *>(output.c_str()));
-    data->outPipe->Insert(&temp);
+    std::string output = std::to_string(intResult + doubleResult) + "|";
 
+    temp.ComposeRecord(outSchema, const_cast<char *>(output.c_str()));
+    data->outPipe->Insert(&temp);
     data->outPipe->ShutDown();
+}
+
+void *Sum::ThreadMethod(void *d) {
+    auto *data = (RelOpSumData *) d;
+    Attribute att = {"att1", Double};
+    Schema outSchema("out_schema", 1, &att);
+
+    if (data->distinctFunc) DistinctSum(data, &outSchema);
+    else SimpleSum(data, &outSchema);
+
     return nullptr;
+}
+
+string Sum::operation() {
+    return "Sum";
 }
 
 void DuplicateRemoval::Run(Pipe &inPipe, Pipe &outPipe, Schema &mySchema) {
@@ -145,6 +200,10 @@ void *DuplicateRemoval::ThreadMethod(void *d) {
     return nullptr;
 }
 
+string DuplicateRemoval::operation() {
+    return "DuplicateRemoval";
+}
+
 void WriteOut::Run(Pipe &inPipe, FILE *outFile, Schema &mySchema) {
     auto *data = new RelOpWriteOutData();
     data->inPipe = &inPipe;
@@ -162,6 +221,10 @@ void *WriteOut::ThreadMethod(void *d) {
 
     fclose(data->outFile);
     return nullptr;
+}
+
+string WriteOut::operation() {
+    return "WriteOut";
 }
 
 void Join::Run(Pipe &inPipeL, Pipe &inPipeR, Pipe &outPipe, CNF &selOp, Record &literal) {
@@ -233,8 +296,8 @@ void Join::NestedBlockJoin(Pipe *pipeL, Pipe *pipeR, int runlen, Pipe *out) {
                         rightCount = i->NumberOfAtts();
                         attsToKeep = new int[leftCount + rightCount];
                         int indexInArray = 0;
-                        for (int i = 0; i < leftCount; i++) attsToKeep[indexInArray++] = i;
-                        for (int i = 0; i < rightCount; i++) attsToKeep[indexInArray++] = i;
+                        for (int index = 0; index < leftCount; index++) attsToKeep[indexInArray++] = index;
+                        for (int index = 0; index < rightCount; index++) attsToKeep[indexInArray++] = index;
                     }
 
                     mergeRecord.MergeRecords(o, i, leftCount, rightCount, attsToKeep, leftCount + rightCount,
@@ -252,23 +315,51 @@ void Join::NestedBlockJoin(Pipe *pipeL, Pipe *pipeR, int runlen, Pipe *out) {
     out->ShutDown();
 }
 
-// TODO : Fix join if there are multiple records on first side of same values,
-// It will make miss records for second table
 void Join::ComparisonBasedJoin(Pipe *pipeL, Pipe *pipeR, OrderMaker *orderL, OrderMaker *orderR, Pipe *out) {
     ComparisonEngine comp;
-    Record tempLeft, tempRight;
+    Record *tempLeft = new Record(), *tempRight = new Record(), *firstLeft = nullptr;
     int *attsToKeep = nullptr;
-    int rightIsPresent = 0;
+    int leftIsPresent = 0, rightIsPresent = 0;
     int leftCount = -1, rightCount = -1;
 
-    while (pipeL->Remove(&tempLeft)) {
-        while (rightIsPresent || pipeR->Remove(&tempRight)) {
-            int comparisionResult = comp.Compare(&tempLeft, orderL, &tempRight, orderR);
+    vector<Record *> leftRecords, rightRecords;
+    while (leftIsPresent || pipeL->Remove(tempLeft)) {
+        leftRecords.push_back(tempLeft);
+        leftIsPresent = 0;
 
-            if (comparisionResult == 0) {
+        firstLeft = new Record();
+        firstLeft->Copy(tempLeft);
+
+        tempLeft = new Record();
+        while (pipeL->Remove(tempLeft)) {
+            if (comp.Compare(firstLeft, tempLeft, orderL) == 0) {
+                leftRecords.push_back(tempLeft);
+                tempLeft = new Record();
+            } else {
+                leftIsPresent = 1;
+                break;
+            }
+        }
+
+        while (rightIsPresent || pipeR->Remove(tempRight)) {
+            rightIsPresent = 0;
+            int comparisonResult = comp.Compare(tempRight, orderR, firstLeft, orderL);
+            if (comparisonResult == 0) {
+                rightRecords.push_back(tempRight);
+                tempRight = new Record();
+            } else if (comparisonResult < 0) {
+                tempRight = new Record();
+            } else {
+                rightIsPresent = 1;
+                break;
+            }
+        }
+
+        for (Record *l : leftRecords) {
+            for (Record *r : rightRecords) {
                 if (attsToKeep == nullptr) {
-                    leftCount = tempLeft.NumberOfAtts();
-                    rightCount = tempRight.NumberOfAtts();
+                    leftCount = firstLeft->NumberOfAtts();
+                    rightCount = tempRight->NumberOfAtts();
                     attsToKeep = new int[leftCount + rightCount];
                     int indexInArray = 0;
                     for (int i = 0; i < leftCount; i++) attsToKeep[indexInArray++] = i;
@@ -276,15 +367,13 @@ void Join::ComparisonBasedJoin(Pipe *pipeL, Pipe *pipeR, OrderMaker *orderL, Ord
                 }
 
                 Record tempMerge;
-                tempMerge.MergeRecords(&tempLeft, &tempRight, leftCount, rightCount, attsToKeep, leftCount + rightCount,
-                                       leftCount);
+                tempMerge.MergeRecords(l, r, leftCount, rightCount, attsToKeep, leftCount + rightCount, leftCount);
                 out->Insert(&tempMerge);
-            } else if (comparisionResult < 0) {
-                rightIsPresent = 1;
-                break;
             }
-            rightIsPresent = 0;
         }
+
+        leftRecords.clear();
+        rightRecords.clear();
     }
     out->ShutDown();
 }
@@ -304,13 +393,18 @@ void *Join::ThreadMethod(void *d) {
     return nullptr;
 }
 
-void GroupBy::Run(Pipe &inPipe, Pipe &outPipe, OrderMaker &groupAtts, Function &computeMe) {
+string Join::operation() {
+    return "Join";
+}
+
+void GroupBy::Run(Pipe &inPipe, Pipe &outPipe, OrderMaker &groupAtts, Function &computeMe, bool distinctFunc) {
     auto *data = new RelOpGroupByData();
     data->inPipe = &inPipe;
     data->outPipe = &outPipe;
     data->groupAtts = &groupAtts;
     data->computeMe = &computeMe;
     data->runLen = runLen;
+    data->distinctFunc = distinctFunc;
 
     pthread_create(&thread, nullptr, ThreadMethod, (void *) data);
 }
@@ -322,8 +416,8 @@ std::string AppendOrderAtts(std::string output, OrderMaker &o, Record &r) {
 
 void *GroupBy::ThreadMethod(void *d) {
     ComparisonEngine comp;
-
     auto *data = (RelOpGroupByData *) d;
+
     Attribute atts[1 + data->groupAtts->numAtts];
     Attribute x = {"attNum", Double};
     atts[0] = x;
@@ -344,46 +438,54 @@ void *GroupBy::ThreadMethod(void *d) {
         return nullptr;
     }
 
-    int intResult = 0, tempIntResult;
-    double doubleResult = 0.0, tempDoubleResult;
+    Sum *sum = new Sum();
+    Pipe *sumInPipe = new Pipe(100), *sumOutPipe = new Pipe(100);
+    sum->Run(*sumInPipe, *sumOutPipe, *data->computeMe, data->distinctFunc);
 
     while (tempPipe.Remove(&temp2)) {
-        tempIntResult = 0;
-        tempDoubleResult = 0.0;
-
         int comparision = comp.Compare(&temp1, &temp2, data->groupAtts);
+        Record temp1Copy;
+        temp1Copy.Copy(&temp1);
 
-        Type type = data->computeMe->Apply(temp1, tempIntResult, tempDoubleResult);
-        intResult += tempIntResult;
-        doubleResult += tempDoubleResult;
+        sumInPipe->Insert(&temp1);
 
         if (comparision == 0) {
             temp1.Consume(&temp2);
             continue;
         }
+        sumInPipe->ShutDown();
 
-        std::string output = type == Int ? std::to_string(intResult) : std::to_string(intResult + doubleResult) + "|";
-        atts->myType = type;
-        outPipeTemp.ComposeRecord(&outSchema, AppendOrderAtts(output, *data->groupAtts, temp1).c_str());
+        Record outTemp;
+        sumOutPipe->Remove(&outTemp);
+
+        std::string output = outTemp.GetAtt(0, Double) + "|";
+        outPipeTemp.ComposeRecord(&outSchema, AppendOrderAtts(output, *data->groupAtts, temp1Copy).c_str());
         data->outPipe->Insert(&outPipeTemp);
 
-        intResult = 0;
-        doubleResult = 0.0;
         temp1.Consume(&temp2);
+
+        sum = new Sum();
+        sumInPipe = new Pipe(100);
+        sumOutPipe = new Pipe(100);
+        sum->Run(*sumInPipe, *sumOutPipe, *data->computeMe, data->distinctFunc);
     }
 
-    tempIntResult = 0;
-    tempDoubleResult = 0.0;
-    Type type = data->computeMe->Apply(temp1, tempIntResult, tempDoubleResult);
-    intResult += tempIntResult;
-    doubleResult += tempDoubleResult;
+    Record temp1Copy;
+    temp1Copy.Copy(&temp1);
+    sumInPipe->Insert(&temp1);
+    sumInPipe->ShutDown();
 
-    std::string output =
-            type == Int ? std::to_string(intResult) : std::to_string(intResult + doubleResult) + "|";
-    atts->myType = type;
-    outPipeTemp.ComposeRecord(&outSchema, AppendOrderAtts(output, *data->groupAtts, temp1).c_str());
+    Record outTemp;
+    sumOutPipe->Remove(&outTemp);
+
+    std::string output = outTemp.GetAtt(0, Double) + "|";
+    outPipeTemp.ComposeRecord(&outSchema, AppendOrderAtts(output, *data->groupAtts, temp1Copy).c_str());
     data->outPipe->Insert(&outPipeTemp);
 
     data->outPipe->ShutDown();
     return nullptr;
+}
+
+string GroupBy::operation() {
+    return "GroupBy";
 }

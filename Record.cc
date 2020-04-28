@@ -484,7 +484,7 @@ void Record::WriteToFile(Schema *mySchema, FILE *textFile) {
             fprintf(textFile, "%f|", *myDouble);
         } else if (atts[i].myType == String) {
             char *myString = (char *) &(bits[pointer]);
-            fprintf(textFile, "%c|", *myString);
+            fprintf(textFile, "%s|", myString);
         }
     }
 

@@ -27,6 +27,7 @@ typedef struct {
     Pipe *inPipe;
     Pipe *outPipe;
     Function *computeMe;
+    bool distinctFunc;
 } RelOpSumData;
 
 typedef struct  {
@@ -57,6 +58,7 @@ typedef struct {
     OrderMaker *groupAtts;
     Function *computeMe;
     int runLen;
+    bool distinctFunc;
 } RelOpGroupByData;
 
 #endif //DATABASE_IMPLEMENTATION_RELOPSTRUCTS_H

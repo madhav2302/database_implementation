@@ -374,7 +374,7 @@ void CNF :: GrowFromParseTree (struct AndList *parseTree, Schema *leftSchema,
 	
 			// catch-all case
 			} else {
-				cerr << "You gave me some strange type for an operand that I do not recognize!!\n";
+				cerr << "You gave me some strange type for an operand that I do not recognize!! 377\n";
 				exit (1);
 			}
 
@@ -429,7 +429,7 @@ void CNF :: GrowFromParseTree (struct AndList *parseTree, Schema *leftSchema,
 	
 			// catch-all case
 			} else {
-				cerr << "You gave me some strange type for an operand that I do not recognize!!\n";
+				cerr << "You gave me some strange type for an operand that I do not recognize!! 432\n";
 				exit (1);
 			}
 
@@ -572,7 +572,7 @@ void CNF :: GrowFromParseTree (struct AndList *parseTree, Schema *mySchema,
 	
 			// catch-all case
 			} else {
-				cerr << "You gave me some strange type for an operand that I do not recognize!!\n";
+				cerr << "You gave me some strange type for an operand that I do not recognize!! 575\n";
 				exit (1);
 			}
 
@@ -620,7 +620,7 @@ void CNF :: GrowFromParseTree (struct AndList *parseTree, Schema *mySchema,
 	
 			// catch-all case
 			} else {
-				cerr << "You gave me some strange type for an operand that I do not recognize!!\n";
+				cerr << "You gave me some strange type for an operand that I do not recognize!! 623\n";
 				exit (1);
 			}
 			

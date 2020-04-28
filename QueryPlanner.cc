@@ -72,7 +72,14 @@ void QueryPlanner::ProjectColumns() {
 
     Schema *inputSchema = inputRelOpNode->outputSchema;
 
-    int *keepMe = nullptr;
+    int count = 0;
+    NameList *nameListLocal = attsToSelect;
+    while (nameListLocal) {
+        count++;
+        nameListLocal = nameListLocal->next;
+    }
+
+    int *keepMe = new int[count];
     auto *outputSchema = new Schema(inputSchema, attsToSelect, keepMe);
 
     if (inputSchema->GetNumAtts() == outputSchema->GetNumAtts()) return;
@@ -124,7 +131,14 @@ void QueryPlanner::GroupByTable() {
 
     auto *orderMaker = new OrderMaker(groupByInputSchema, nameList);
 
-    int *keepMe = nullptr;
+    int count = 0;
+    NameList *nameListLocal = nameList;
+    while (nameListLocal) {
+        count++;
+        nameListLocal = nameListLocal->next;
+    }
+
+    int *keepMe = new int[count];
     auto *groupedAttsSchema = new Schema(groupByInputSchema, nameList, keepMe);
 
     auto *outputSchema = new Schema(&sumSchema, groupedAttsSchema);
@@ -346,7 +360,8 @@ void QueryPlanner::SelectTables() {
         auto *selectFileNode = new SelectFileRelOpNode();
 
         // Create Schema with aliased attributes.
-        auto *schema = new Schema(catalogPath, tableList->tableName);
+        std::string schemaPath = std::string(catalogPath) + tableList->tableName;
+        auto *schema = new Schema(const_cast<char *>(schemaPath.c_str()), tableList->tableName);
         schema->AliasAttributes(tableList->aliasAs);
         selectFileNode->outputSchema = schema;
 
@@ -372,6 +387,11 @@ void QueryPlanner::Print() {
     PostOrderQueryPlan(groupToRelOp[GetResultantGroupName()]);
 }
 
+RelOpNode *QueryPlanner::Execute() {
+    PostOrderQueryExecution(groupToRelOp[GetResultantGroupName()]);
+    return groupToRelOp[GetResultantGroupName()];
+}
+
 void QueryPlanner::PostOrderQueryPlan(RelOpNode *node) {
     if (node == nullptr) return;
 
@@ -380,6 +400,26 @@ void QueryPlanner::PostOrderQueryPlan(RelOpNode *node) {
     node->Print();
 }
 
+void QueryPlanner::PostOrderQueryExecution(RelOpNode *node) {
+    if (node == nullptr) return;
+
+    PostOrderQueryExecution(node->child1);
+    PostOrderQueryExecution(node->child2);
+    node->Execute(&pipes);
+}
+
 unordered_map<string, RelOpNode *> QueryPlanner::GetGroupToRelOp() {
     return groupToRelOp;
+}
+
+void QueryPlanner::CleanUp() {
+    CleanUp(groupToRelOp[GetResultantGroupName()]);
+}
+
+void QueryPlanner::CleanUp(RelOpNode *node) {
+    if (node == nullptr) return;
+
+    CleanUp(node->child1);
+    CleanUp(node->child2);
+    node->CleanUp();
 }

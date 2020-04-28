@@ -33,7 +33,7 @@ void GenericDBFile::Load(Schema &f_schema, const char *loadpath) {
         counter++;
         Add(temp);
 
-        if (counter % 10000 == 0) std::cerr << counter << "\n";
+//        if (counter % 10000 == 0) std::cerr << counter << "\n";
     }
 
     // Flush the page with rest of the records

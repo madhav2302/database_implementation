@@ -1,6 +1,7 @@
 
 #include "QueryPlannerNode.h"
 #include <iostream>
+#include "Pipe.h"
 
 using namespace std;
 
@@ -20,6 +21,17 @@ void DuplicateRemovalRelOpNode::Print() {
     cout << "DISTINCT operation" << "\n";
 
     RelOpNode::Print();
+}
+
+void DuplicateRemovalRelOpNode::Execute(unordered_map<int, Pipe *> *pipes) {
+    pipes->insert(pair<int, Pipe *>(outputPipeId, pipe));
+
+    Pipe *inputPipe = pipes->find(inputPipeId1)->second;
+    relOp->Run(*inputPipe, *pipe, *outputSchema);
+}
+
+void DuplicateRemovalRelOpNode::CleanUp() {
+    relOp->WaitUntilDone();
 }
 
 void GroupByRelOpNode::Print() {
@@ -44,6 +56,17 @@ void GroupByRelOpNode::Print() {
     }
 }
 
+void GroupByRelOpNode::Execute(unordered_map<int, Pipe *> *pipes) {
+    pipes->insert(pair<int, Pipe *>(outputPipeId, pipe));
+
+    Pipe *inputPipe = pipes->find(inputPipeId1)->second;
+    relOp->Run(*inputPipe, *pipe, *groupAtts, *computeMe, distinctFunc);
+}
+
+void GroupByRelOpNode::CleanUp() {
+    relOp->WaitUntilDone();
+}
+
 void JoinRelOpNode::Print() {
     cout << " *********** " << "\n";
     cout << "JOIN operation" << "\n";
@@ -56,6 +79,18 @@ void JoinRelOpNode::Print() {
     cout << "CNF: " << "\n";
     selOp->Print();
     cout << "\n";
+}
+
+void JoinRelOpNode::Execute(unordered_map<int, Pipe *> *pipes) {
+    pipes->insert(pair<int, Pipe *>(outputPipeId, pipe));
+
+    Pipe *leftPipe = pipes->find(inputPipeId1)->second;
+    Pipe *rightPipe = pipes->find(inputPipeId2)->second;
+    relOp->Run(*leftPipe, *rightPipe, *pipe, *selOp, *literal);
+}
+
+void JoinRelOpNode::CleanUp() {
+    relOp->WaitUntilDone();
 }
 
 void SelectFileRelOpNode::Print() {
@@ -72,6 +107,18 @@ void SelectFileRelOpNode::Print() {
     cout << "\n";
 }
 
+void SelectFileRelOpNode::Execute(unordered_map<int, Pipe *> *pipes) {
+    pipes->insert(pair<int, Pipe *>(outputPipeId, pipe));
+    dbFile->Open(outputSchema->binaryFileLocation());
+    dbFile->MoveFirst();
+    relOp->Run(*dbFile, *pipe, *selOp, *literal);
+}
+
+void SelectFileRelOpNode::CleanUp() {
+    relOp->WaitUntilDone();
+    dbFile->Close();
+}
+
 void SelectPipeRelOpNode::Print() {
     cout << " *********** " << "\n";
     cout << "SELECT PIPE operation" << "\n";
@@ -83,6 +130,17 @@ void SelectPipeRelOpNode::Print() {
     cout << "SELECTION CNF :" << "\n";
     selOp->Print();
     cout << "\n";
+}
+
+void SelectPipeRelOpNode::Execute(unordered_map<int, Pipe *> *pipes) {
+    pipes->insert(pair<int, Pipe *>(outputPipeId, pipe));
+
+    Pipe *inputPipe = pipes->find(inputPipeId1)->second;
+    relOp->Run(*inputPipe, *pipe, *selOp, *literal);
+}
+
+void SelectPipeRelOpNode::CleanUp() {
+    relOp->WaitUntilDone();
 }
 
 void SumRelOpNode::Print() {
@@ -100,10 +158,31 @@ void SumRelOpNode::Print() {
     cout << "\n";
 }
 
+void SumRelOpNode::Execute(unordered_map<int, Pipe *> *pipes) {
+    pipes->insert(pair<int, Pipe *>(outputPipeId, pipe));
+
+    Pipe *inputPipe = pipes->find(inputPipeId1)->second;
+    relOp->Run(*inputPipe, *pipe, *computeMe, distinctFunc);
+}
+
+void SumRelOpNode::CleanUp() {
+    relOp->WaitUntilDone();
+}
+
 void ProjectRelOpNode::Print() {
     cout << " *********** " << "\n";
     cout << "PROJECT operation" << "\n";
 
     RelOpNode::Print();
     cout << "\n";
+}
+
+void ProjectRelOpNode::Execute(unordered_map<int, Pipe *> *pipes) {
+    pipes->insert(pair<int, Pipe *>(outputPipeId, pipe));
+    Pipe *inputPipe = pipes->find(inputPipeId1)->second;
+    relOp->Run(*inputPipe, *pipe, keepMe, numAttsInput, numAttsOutput);
+}
+
+void ProjectRelOpNode::CleanUp() {
+    relOp->WaitUntilDone();
 }

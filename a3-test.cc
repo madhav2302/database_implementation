@@ -151,7 +151,7 @@ void q3 () {
 			get_cnf (str_sum, s->schema (), func);
 	T.Use_n_Pages (1);
 	SF_s.Run (dbf_s, _s, cnf_s, lit_s);
-	T.Run (_s, _out, func);
+	T.Run (_s, _out, func, 0);
 
 	SF_s.WaitUntilDone ();
 	T.WaitUntilDone ();
@@ -201,7 +201,7 @@ void q4 () {
 
 	SF_ps.Run (dbf_ps, _ps, cnf_ps, lit_ps); // 161 recs qualified
 	J.Run (_s, _ps, _s_ps, cnf_p_ps, lit_p_ps);
-	T.Run (_s_ps, _out, func);
+	T.Run (_s_ps, _out, func, 0);
 
 	SF_ps.WaitUntilDone ();
 	J.WaitUntilDone ();
@@ -288,7 +288,7 @@ void q6 () {
 
 	SF_ps.Run (dbf_ps, _ps, cnf_ps, lit_ps); // 161 recs qualified
 	J.Run (_s, _ps, _s_ps, cnf_p_ps, lit_p_ps);
-	G.Run (_s_ps, _out, grp_order, func);
+	G.Run (_s_ps, _out, grp_order, func, 0);
 
 	SF_ps.WaitUntilDone ();
 	J.WaitUntilDone ();
@@ -363,7 +363,7 @@ void q7 () {
     J1.Run(_p, _ps, _p_ps, cnf_p_ps, lit_p_ps);
     J2.Run(_s, _p_ps, _s_p_ps, cnf_s_p_ps, lit_s_p_ps);
     SP.Run(_s_p_ps, __s_p_ps, cnf__s_p_ps, lit__s_p_ps);
-    T.Run(__s_p_ps, ___s_p_ps, func);
+    T.Run(__s_p_ps, ___s_p_ps, func, 0);
 
     SF_p.WaitUntilDone();
     SF_ps.WaitUntilDone();

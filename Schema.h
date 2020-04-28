@@ -58,11 +58,17 @@ public:
 
     Schema(Schema *baseSchema, NameList *nameList, int* keepMe);
 
+    Schema(ColumnList *columns);
+
 	// this constructs a sort order structure that can be used to
 	// place a lexicographic ordering on the records using this type of schema
 	int GetSortOrder (OrderMaker &order);
 
+	char *binaryFileLocation();
+
     void AliasAttributes(std::string aliasName);
+
+    void WriteToFile(char *tableName);
 
     void Print();
 

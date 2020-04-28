@@ -32,6 +32,7 @@ private:
 
     unordered_map<string, RelOpNode *> groupToRelOp;
     unordered_map<string, string> relToGroup;
+    unordered_map<int, Pipe *> pipes;
 
     int nextPipeId = 1;
 
@@ -39,7 +40,9 @@ private:
     void SplitJoinsAndFilters(unordered_map<string, AndList *> *tableSelectionAndList, vector<AndList *> *joins);
 
     void FilterTables(unordered_map<string, AndList *> *tableSelectionAndList);
+
     void MinCostJoins(vector<AndList *> *joins, vector<AndList *> *joins_arranged);
+
     void JoinTables(vector<AndList *> *joins);
 
     // Apply group by if it is in the query
@@ -55,16 +58,25 @@ private:
 
     static void PostOrderQueryPlan(RelOpNode *node);
 
+    void PostOrderQueryExecution(RelOpNode *node);
+
+    static void CleanUp(RelOpNode *node);
+
     string GetResultantGroupName();
 
 public:
     QueryPlanner(char *catalog_path, Statistics *statistics, QueryInput *query);
+
     ~QueryPlanner();
 
     // Load all the tables using SelectFile.
     void SelectTables();
 
     void Print();
+
+    RelOpNode *Execute();
+
+    void CleanUp();
 
     unordered_map<string, RelOpNode *> GetGroupToRelOp();
 

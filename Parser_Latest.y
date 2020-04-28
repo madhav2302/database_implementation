@@ -73,6 +73,7 @@
 %type <myComparison> BoolComp
 %type <myComparison> Condition
 %type <myTables> Tables
+%type <myTables> Table
 %type <myBoolOperand> Literal
 %type <myNames> Atts
 %type <myColumns> Columns
@@ -105,7 +106,7 @@ SQL: SELECT WhatIWant FROM Tables WHERE AndList
 	operationCode = SELECT_OP;
 }
 
-| CREATE TABLE Tables '(' Columns ')' AS HEAP
+| CREATE TABLE Table '(' Columns ')' AS HEAP
 {
 	tables = $3;
 	orderAtts = NULL;
@@ -114,7 +115,7 @@ SQL: SELECT WhatIWant FROM Tables WHERE AndList
 
 }
 
-| CREATE TABLE Tables '(' Columns ')' AS SORTED ON Atts
+| CREATE TABLE Table '(' Columns ')' AS SORTED ON Atts
 {
 	tables = $3;
 	orderAtts = $10;
@@ -123,7 +124,7 @@ SQL: SELECT WhatIWant FROM Tables WHERE AndList
 }
 
 
-| DROP TABLE Tables
+| DROP TABLE Table
 {
 	tables = $3;
 	operationCode = DROP_OP;
@@ -140,7 +141,7 @@ SQL: SELECT WhatIWant FROM Tables WHERE AndList
 	fileName = $3;
 	operationCode = SET_OP;
 }
-| INSERT String INTO Tables
+| INSERT String INTO Table
 {
 	tables = $4;
 	fileName = $2;
@@ -225,22 +226,21 @@ Tables: Name AS Name
 	$$->next = NULL;
 }
 
-| Name
-{
-	$$ = (struct TableList *) malloc (sizeof (struct TableList));
-	$$->tableName = $1;
-	$$->aliasAs = "";
-	$$->next = NULL;
-
-}
-
 | Tables ',' Name AS Name
 {
 	$$ = (struct TableList *) malloc (sizeof (struct TableList));
 	$$->tableName = $3;
 	$$->aliasAs = $5;
 	$$->next = $1;
-}
+};
+
+Table: Name
+{
+	$$ = (struct TableList *) malloc (sizeof (struct TableList));
+	$$->tableName = $1;
+	$$->aliasAs = "";
+	$$->next = NULL;
+};
 
 
 

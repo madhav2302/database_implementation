@@ -78,7 +78,7 @@ class CNF {
 	Comparison orList[MAX_ANDS][MAX_ORS];
 	
 	int orLens[MAX_ANDS];
-	int numAnds;
+	int numAnds = 0;
 
 public:
 	void GetSortOrder(OrderMaker &sortOrder, OrderMaker &query);

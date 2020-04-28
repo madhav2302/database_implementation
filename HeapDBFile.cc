@@ -50,6 +50,7 @@ void HeapDBFile::WriteMetadata(const char *fpath, fType file_type, void *startup
 
 void HeapDBFile::ReadMetadata(const char *fpath) {
     writePage = file->GetLength() - 1;
+    if (writePage < 0) writePage = 0;
 }
 
 void HeapDBFile::FlushPage() {

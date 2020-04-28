@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <fstream>
 
 int Schema :: Find (char *attName) {
 
@@ -88,7 +89,7 @@ Schema :: Schema (char *fName, char *relName) {
 
 				// suck up another token
 				if (fscanf (foo, "%s", space) == EOF) {
-					cerr << "Could not find the schema for the specified relation.\n";
+					cerr << "Could not find the schema for the specified relation " << relName <<  ".\n";
 					exit (1);
 				}
 
@@ -179,7 +180,6 @@ Schema :: Schema(Schema *baseSchema, NameList *nameList, int* keepMe) {
     }
 
     myAtts = new Attribute[numAtts];
-    keepMe = new int[numAtts];
     int i = 0;
 
     nameListLocal = nameList;
@@ -195,7 +195,35 @@ Schema :: Schema(Schema *baseSchema, NameList *nameList, int* keepMe) {
 
         nameListLocal = nameListLocal->next;
     }
+}
 
+Type toType(char *parserType) {
+    if (strcmp(parserType, "INTEGER") == 0) return Int;
+    if (strcmp(parserType, "STRING") == 0) return String;
+    if (strcmp(parserType, "DOUBLE") == 0) return Double;
+    cerr << "Unknown Type Found : " << parserType << '\n';
+    exit(1);
+}
+
+Schema::Schema(ColumnList *columns) {
+    ColumnList *temp = columns;
+    numAtts = 0;
+    while (temp) {
+        numAtts++;
+        temp = temp->next;
+    }
+
+    myAtts = new Attribute[numAtts];
+
+    temp = columns;
+    int index = 0;
+    while (temp) {
+        myAtts[index].name = temp->name;
+        myAtts[index].myType  = toType(temp->type);
+
+        index++;
+        temp = temp->next;
+    }
 }
 
 void Schema :: AliasAttributes (std::string aliasName) {
@@ -205,6 +233,34 @@ void Schema :: AliasAttributes (std::string aliasName) {
         char *newAttNameChar = new char[200];
         strcpy(newAttNameChar, newAttName.c_str());
         myAtts[i].name = newAttNameChar;
+    }
+}
+
+std::string typeAsString(Type type) {
+    if (type == Int) return "Int";
+    if (type == String) return "String";
+    if (type == Double) return "Double";
+}
+
+void Schema::WriteToFile(char *tableName) {
+    ofstream metadata(std::string("schema/") + tableName);
+
+    std::string binaryFileLocation = std::string("") + tableName + ".bin";
+
+    if (metadata.is_open()) {
+        metadata << "BEGIN\n";
+        metadata << tableName << '\n';
+        metadata << "data/" << tableName << ".bin\n";
+
+        for (int index = 0; index < numAtts; index++) {
+            metadata << myAtts[index].name << " " << typeAsString(myAtts[index].myType) << '\n';
+        }
+
+        metadata << "END\n";
+        metadata.close();
+    } else {
+        cout << "Unable to open file for write from Schema";
+        exit(1);
     }
 }
 
@@ -229,5 +285,9 @@ void Schema :: Print() {
 Schema :: ~Schema () {
 	delete [] myAtts;
 	myAtts = 0;
+}
+
+char *Schema::binaryFileLocation() {
+    return fileName;
 }
 

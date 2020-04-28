@@ -1,0 +1,7 @@
+BEGIN
+region
+data/region.bin
+r_regionkey Int
+r_name String
+r_comment String
+END

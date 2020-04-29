@@ -17,7 +17,7 @@ add_executable(database_implementation_a42_test a5-test.cc
         TwoWayList.cc TwoWayList.h HeapDBFile.cc  HeapDBFile.h
         RelOp.cc RelOp.h Function.cc Function.h  SortedDBFile.cc SortedDBFile.h
         y.tab.o lex.yy.c RelOpStructs.h Statistics.cc Statistics.h QueryPlanner.cc QueryPlanner.h QueryPlannerNode.cc QueryPlannerNode.h
-        Database.cc Database.h)
+        Database.cc Database.h FinalDBMSGTests.cc)
 
 add_executable(database_implementation_a3_test a3-test.cc a3-test.h
         BigQ.h BigQ.cc Pipe.cc Pipe.h

@@ -18,6 +18,9 @@ main: $(CLASSES) main.o
 
 ##### GTests #####
 
+FinalDBMSGTests.out: $(CLASSES_42_FOR_RULE) FinalDBMSGTests.o
+	$(CC) -o FinalDBMSGTests.out $(CLASSES_42) FinalDBMSGTests.o $(test_out_tag) -lpthread -lgtest
+
 HeapFileGTests.out: $(CLASSES) HeapFileGTests.o
 	$(CC) -o HeapFileGTests.out $(CLASSES) HeapFileGTests.o $(test_out_tag) -lpthread -lgtest
 
@@ -55,6 +58,9 @@ a2test.out: $(CLASSES) a2-test.o
 
 a1test.out: $(CLASSES) a1-test.o
 	$(CC) -o a1test.out $(CLASSES) a1-test.o $(test_out_tag) -lpthread
+
+FinalDBMSGTests.o: FinalDBMSGTests.cc
+	$(CC) -g -c FinalDBMSGTests.cc
 
 HeapFileGTests.o: HeapFileGTests.cc
 	$(CC) -g -c HeapFileGTests.cc

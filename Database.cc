@@ -33,7 +33,7 @@ void Database::Load(char *tableName, char *filePath) {
 
     std::string table = std::string("data/") + tableName + ".bin";
 
-    std::cerr << "Schema Complete\n";
+//    std::cerr << "Schema Complete\n";
     dbFile.Open(table.c_str());
     dbFile.Load(schema, filePath);
     dbFile.Close();
